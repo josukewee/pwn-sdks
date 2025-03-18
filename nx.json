@@ -1,14 +1,9 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "defaultBase": "master",
-  "sync": {
-    "applyChanges": true
-  },
+  "sync": { "applyChanges": true },
   "namedInputs": {
-    "default": [
-      "{projectRoot}/**/*",
-      "sharedGlobals"
-    ],
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
       "default",
       "!{projectRoot}/.eslintrc.json",
@@ -18,13 +13,9 @@
       "!{projectRoot}/src/test-setup.[jt]s",
       "!{projectRoot}/biome.json"
     ],
-    "sharedGlobals": [
-      "{workspaceRoot}/.github/workflows/ci.yml"
-    ]
+    "sharedGlobals": ["{workspaceRoot}/.github/workflows/ci.yml"]
   },
-  "cli": {
-    "packageManager": "bun"
-  },
+  "cli": { "packageManager": "bun" },
   "ignorePatterns": [
     "contracts/solidity/lib/**/*",
     "apps/example-next-e2e/**/*",
@@ -34,9 +25,7 @@
     {
       "plugin": "@nx/js/typescript",
       "options": {
-        "typecheck": {
-          "targetName": "typecheck"
-        },
+        "typecheck": { "targetName": "typecheck" },
         "build": {
           "targetName": "build",
           "configName": "tsconfig.lib.json",
@@ -45,12 +34,7 @@
         }
       }
     },
-    {
-      "plugin": "@nx/eslint/plugin",
-      "options": {
-        "targetName": "lint"
-      }
-    },
+    { "plugin": "@nx/eslint/plugin", "options": { "targetName": "lint" } },
     {
       "plugin": "@nx/vite/plugin",
       "options": {
@@ -76,70 +60,31 @@
         "watchDepsTargetName": "watch-deps"
       }
     },
-    {
-      "plugin": "@nx/playwright/plugin",
-      "options": {
-        "targetName": "e2e"
-      }
-    }
+    { "plugin": "@nx/playwright/plugin", "options": { "targetName": "e2e" } }
   ],
   "release": {
     "changelog": {
-      "workspaceChangelog": {
-        "file": false,
-        "createRelease": "github"
-      }
+      "workspaceChangelog": { "file": false, "createRelease": "github" }
     },
     "version": {
       "preVersionCommand": "bunx nx run-many -t build",
-      "generatorOptions": {
-        "preserveLocalDependencyProtocols": true
-      }
+      "generatorOptions": { "preserveLocalDependencyProtocols": true }
     }
   },
   "targetDefaults": {
-    "test": {
-      "dependsOn": [
-        "^build",
-        "^build"
-      ]
-    },
-    "e2e-ci--**/*": {
-      "dependsOn": [
-        "^build"
-      ]
-    },
-    "dev": {
-      "dependsOn": [
-        "^build"
-      ],
-      "cache": true
-    },
+    "test": { "dependsOn": ["^build", "^build"] },
+    "e2e-ci--**/*": { "dependsOn": ["^build"] },
+    "dev": { "dependsOn": ["^build"], "cache": true },
     "lint-biome": {
-      "inputs": [
-        "default",
-        "{workspaceRoot}/biome.json"
-      ],
+      "inputs": ["default", "{workspaceRoot}/biome.json"],
       "cache": true
     }
   },
   "generators": {
-    "@nx/react": {
-      "library": {
-        "unitTestRunner": "vitest"
-      }
-    },
-    "@nx/next": {
-      "application": {
-        "style": "css",
-        "linter": "eslint"
-      }
-    },
-    "@nx/vue": {
-      "application": {
-        "linter": "eslint"
-      }
-    }
+    "@nx/react": { "library": { "unitTestRunner": "vitest" } },
+    "@nx/next": { "application": { "style": "css", "linter": "eslint" } },
+    "@nx/vue": { "application": { "linter": "eslint" } }
   },
-  "neverConnectToCloud": true
+  "neverConnectToCloud": true,
+  "nxCloudId": "67d9c81c4aeb47e46a0459dd"
 }
