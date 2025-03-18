@@ -1,0 +1,83 @@
+name: CI and Publish
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - v*.*.*
+  pull_request:
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write # needed for provenance data generation
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.5
+
+      - run: bun install
+      - uses: nrwl/nx-set-shas@v4
+
+      - run: bunx nx affected -t biome-lint test build --parallel=1 --verbose
+
+  publish:
+    name: Publish All Packages
+    needs: ci
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.5
+
+      - name: Install dependencies
+        run: bun install
+        shell: bash
+
+      - name: Print Environment Info
+        run: bunx nx report
+        shell: bash
+
+      - name: Build All Packages
+        id: build
+        run: bunx nx run-many -t build --exclude=/apps
+        shell: bash
+
+      - name: Publish All Packages
+        if: steps.build.outcome == 'success'
+        run: bunx nx release publish --access public
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true 

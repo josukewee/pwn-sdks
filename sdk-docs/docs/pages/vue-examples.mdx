@@ -1,0 +1,121 @@
+# Vue.js Implementation Examples
+
+The PwnDAO SDK seamlessly integrates with Vue.js applications using Vue Query. Here are the key implementation examples:
+
+## 1. Strategy Hook Setup
+
+Create a reusable composable for fetching strategy data:
+
+```typescript
+// composables/use-strategy.ts
+import { getStrategy } from "@pwndao/v1-core"
+import { useQuery } from "@tanstack/vue-query"
+
+export const useStrategy = (strategyId: string) => {
+    return useQuery({
+        queryKey: ['strategy', strategyId],
+        queryFn: ({ queryKey }) => getStrategy(queryKey[1]),
+        enabled: !!strategyId,
+    })
+}
+```
+
+## 2. Using the Strategy Hook
+
+Example of a component using the strategy hook:
+
+```vue
+<script setup lang="ts">
+import { useStrategy } from '@/composables/use-strategy'
+
+// Use the strategy hook with a strategy ID
+const { data: strategy, isLoading, error } = useStrategy('your-strategy-id')
+</script>
+
+<template>
+  <div>
+    <div v-if="isLoading">Loading strategy...</div>
+    <div v-else-if="error">Error loading strategy</div>
+    <div v-else>
+      <h1>{{ strategy.name }}</h1>
+      <div class="strategy-details">
+        <div>
+          <h3>Lending Stats</h3>
+          <div>Total Committed: {{ formatUnits(strategy.lendingStats.totalCommittedAmount, 18) }} USD</div>
+          <div>Total Available: {{ formatUnits(strategy.lendingStats.totalAvailableAmount, 18) }} USD</div>
+        </div>
+        <div>
+          <h3>Terms</h3>
+          <div>APR: {{ strategy.terms.apr[getPairKey(strategy)] }}%</div>
+          <div>LTV: {{ strategy.terms.ltv[getPairKey(strategy)] }}%</div>
+          <div>Duration: {{ strategy.terms.durationDays }} days</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { formatUnits } from 'viem'
+
+const getPairKey = (strategy) => {
+  const firstCollateralAsset = strategy.terms.collateralAssets[0]
+  const firstCreditAsset = strategy.terms.creditAssets[0]
+  return `${firstCollateralAsset.address}/${firstCollateralAsset.chainId}-${firstCreditAsset.address}/${firstCreditAsset.chainId}`
+}
+</script>
+```
+
+## 3. Testing Strategy Hooks
+
+Example of testing the strategy hook:
+
+```typescript
+// use-strategy.test.ts
+import { mount } from '@vue/test-utils'
+import { useStrategy } from './use-strategy'
+import { VueQueryPlugin } from '@tanstack/vue-query'
+import { getStrategy } from '@pwndao/v1-core'
+
+vi.mock('@pwndao/v1-core', () => ({
+    getStrategy: vi.fn(),
+}))
+
+describe('useStrategy', () => {
+  it('should be a function', () => {
+    const wrapper = mount(useStrategy, {
+        global: {
+          plugins: [VueQueryPlugin],
+        }
+    })
+
+    expect(useStrategy).toBeInstanceOf(Function)
+    expect(wrapper.vm).toBeDefined()
+    expect(getStrategy).toHaveBeenCalledWith('test')
+  })
+})
+```
+
+## Important Considerations
+
+1. **Vue Query Integration**
+   - Uses TanStack Query (Vue Query) for efficient data management
+   - Handles caching and request deduplication automatically
+   - Provides loading and error states out of the box
+
+2. **Composables Pattern**
+   - Follows Vue's Composition API best practices
+   - Creates reusable hooks for data fetching
+   - Separates concerns between data and presentation
+
+3. **Type Safety**
+   - Fully typed using TypeScript
+   - Leverages SDK types for consistency
+   - Provides proper type inference in templates
+
+4. **Testing**
+   - Uses Vue Test Utils for component testing
+   - Implements proper mocking of SDK functions
+   - Tests both composables and components
+
+For more detailed examples and advanced usage patterns, check out our [Vue Example App](https://github.com/pwndao/example-vue). 

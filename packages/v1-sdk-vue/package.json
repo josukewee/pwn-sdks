@@ -1,0 +1,48 @@
+{
+  "name": "@pwndao/sdk-v1-vue",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "dependencies": {
+    "@pwndao/v1-core": "workspace:*",
+    "@pwndao/sdk-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@tanstack/vue-query": "^5.59.1"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0"
+  },
+  "nx": {
+    "name": "@pwndao/sdk-v1-vue",
+    "targets": {
+      "biome-lint": {
+        "executor": "@gitopslovers/nx-biome:biome-lint",
+        "outputs": [
+          "{options.outputFile}"
+        ],
+        "options": {
+          "lintFilePatterns": [
+            "packages/v1-sdk-vue/**/*.ts"
+          ],
+          "write": false,
+          "unsafe": false
+        }
+      }
+    }
+  }
+}

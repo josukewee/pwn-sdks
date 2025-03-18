@@ -1,0 +1,26 @@
+{
+  "name": "@pwndao/api-sdk",
+  "version": "0.0.1-alpha-1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "devDependencies": {
+    "orval": "^7.4.1"
+  },
+  "scripts": {
+    "build-code": "npx orval"
+  }
+}

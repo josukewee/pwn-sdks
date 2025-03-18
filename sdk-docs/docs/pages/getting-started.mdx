@@ -1,0 +1,158 @@
+# Getting Started with PwnDAO SDK
+
+## Introduction
+
+PwnDAO SDK is a comprehensive toolkit for integrating decentralized lending and borrowing functionality into your applications. The SDK provides a set of tools and utilities for interacting with PwnDAO's protocols, making it easy to:
+
+- Create and manage lending strategies
+- Handle loan proposals and commitments
+- Manage collateral and credit assets
+- Interact with smart contracts
+- Handle wallet connections and transactions
+
+The SDK is framework-agnostic at its core (`@pwndao/v1-core`) but provides specialized integrations for popular frameworks:
+- React/Next.js integration via `@pwndao/sdk-v1-react`
+- Vue.js integration via `@pwndao/sdk-v1-vue`
+
+## Quick Start
+
+### Installation
+
+Install the core SDK and framework-specific package along with peer dependencies:
+
+```bash
+# For React/Next.js applications
+npm install @pwndao/v1-core @pwndao/sdk-v1-react @wagmi/core viem
+
+# For Vue.js applications
+npm install @pwndao/v1-core @pwndao/sdk-v1-vue @tanstack/vue-query viem
+```
+
+### Basic Configuration
+
+1. **React/Next.js Setup**
+
+```typescript
+// app/providers.tsx
+import { createConfig, WagmiProvider } from 'wagmi';
+import { mainnet, sepolia } from '@wagmi/core/chains';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { http } from 'viem';
+
+const config = createConfig({
+  chains: [mainnet, sepolia],
+  transports: {
+    [mainnet.id]: http(),
+    [sepolia.id]: http(),
+  },
+});
+
+const queryClient = new QueryClient();
+
+export function Providers({ children }) {
+  return (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    </WagmiProvider>
+  );
+}
+```
+
+2. **Vue.js Setup**
+
+```typescript
+// main.ts
+import { createApp } from 'vue'
+import { VueQueryPlugin } from '@tanstack/vue-query'
+import App from './App.vue'
+
+const app = createApp(App)
+app.use(VueQueryPlugin)
+app.mount('#app')
+```
+
+## Core Concepts
+
+### 1. Strategies
+
+Strategies are the foundation of PwnDAO's lending protocol. They define:
+- Which assets can be used as collateral
+- Which assets can be borrowed
+- Loan terms (APR, LTV, duration)
+- Expiration periods
+- Minimum amounts
+
+Example of working with strategies:
+
+```typescript
+import { useStrategies } from '@pwndao/sdk-v1-react'; // or sdk-v1-vue
+import { SupportedChain } from '@pwndao/v1-core';
+
+// Fetch all available strategies
+const { data: strategies } = useStrategies(SupportedChain.World);
+
+// Access strategy information
+strategies?.forEach(strategy => {
+  console.log({
+    name: strategy.name,
+    apr: strategy.terms.apr,
+    ltv: strategy.terms.ltv,
+    assets: {
+      credit: strategy.terms.creditAssets,
+      collateral: strategy.terms.collateralAssets
+    }
+  });
+});
+```
+
+### 2. Proposals
+
+Proposals are requests for loans or lending commitments. They include:
+- Credit amount and asset
+- Collateral amount and asset
+- Terms acceptance
+- Duration and expiration
+
+Example of creating a proposal:
+
+```typescript
+import { useMakeProposals } from '@pwndao/sdk-v1-react'; // or sdk-v1-vue
+import { ProposalType } from '@pwndao/v1-core';
+
+const { mutateAsync: makeProposal } = useMakeProposals({
+  proposalType: ProposalType.Elastic,
+  // ... configuration
+});
+
+// Create a proposal
+await makeProposal({
+  terms: {
+    creditAmount: BigInt("1000000000000000000"), // 1 ETH
+    ltv: strategy.terms.ltv,
+    apr: strategy.terms.apr,
+    duration: { days: 30 },
+    // ... other terms
+  },
+  collateralAssets: strategy.terms.collateralAssets,
+  creditAssets: strategy.terms.creditAssets,
+});
+```
+
+## Next Steps
+
+1. Check out framework-specific examples:
+   - [React/Next.js Examples](/react-examples)
+   - [Vue.js Examples](/vue-examples)
+
+2. Explore the [API Reference](/api-reference) for detailed documentation of:
+   - Core components and types
+   - React/Next.js hooks
+   - Vue.js composables
+   - Utility functions
+
+3. Join our community:
+   - [GitHub Repository](https://github.com/pwndao/pwn-sdk)
+   - [Discord Community](https://discord.gg/pwndao)
+   - [Documentation](https://docs.pwndao.com)

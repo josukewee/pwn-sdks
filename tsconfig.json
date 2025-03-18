@@ -1,0 +1,34 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/core"
+    },
+    {
+      "path": "./packages/v1-core"
+    },
+    {
+      "path": "./packages/v1-sdk-react"
+    },
+    {
+      "path": "./apps/example-next-e2e"
+    },
+    {
+      "path": "./apps/example-next"
+    },
+    {
+      "path": "./packages/api"
+    },
+    {
+      "path": "./packages/v1-sdk-vue"
+    },
+    {
+      "path": "./apps/example-vue-e2e"
+    },
+    {
+      "path": "./apps/example-vue"
+    }
+  ]
+}

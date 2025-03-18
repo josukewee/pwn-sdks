@@ -1,0 +1,25 @@
+{
+  "name": "@pwndao-sdk/example-vue-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "example-vue"
+    ],
+    "targets": {
+      "biome-lint": {
+        "executor": "@gitopslovers/nx-biome:biome-lint",
+        "outputs": [
+          "{options.outputFile}"
+        ],
+        "options": {
+          "lintFilePatterns": [
+            "apps/example-vue-e2e/**/*.ts"
+          ],
+          "write": false,
+          "unsafe": false
+        }
+      }
+    }
+  }
+}

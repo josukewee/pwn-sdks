@@ -1,0 +1,259 @@
+# React/Next.js Implementation Examples
+
+The PwnDAO SDK provides comprehensive integration with React and Next.js applications. Here are the key implementation examples:
+
+## 1. Listing Strategies
+
+Example of listing all available strategies:
+
+```tsx
+// app/strategies/page.tsx
+'use client'
+
+import Link from "next/link"
+import { SupportedChain } from "@pwndao/sdk-core"
+import { useStrategies } from "@pwndao/sdk-v1-react"
+import { formatUnits } from "viem"
+
+export default function StrategiesPage() {
+    const { data: strategies, isLoading } = useStrategies(SupportedChain.World)
+
+    if (isLoading) {
+        return <div>Loading strategies...</div>
+    }
+
+    return (
+        <div className="container">
+            <h1>Strategies</h1>
+            <div className="grid">
+                {strategies?.map((strategy) => (
+                    <div key={strategy.id}>
+                        <h2>{strategy.name}</h2>
+                        <p>{strategy.description}</p>
+                        
+                        <div>
+                            <div>
+                                <span>Total Committed:</span>
+                                <span>{formatUnits(strategy.lendingStats.totalCommittedAmount, 18)} USD</span>
+                            </div>
+                            <div>
+                                <span>Credit Assets:</span>
+                                <span>{strategy.terms.creditAssets.map(asset => asset.symbol).join(", ")}</span>
+                            </div>
+                            <div>
+                                <span>APR:</span>
+                                <span>
+                                    {strategy.terms.apr[`${strategy.terms.collateralAssets[0].address}/${strategy.terms.collateralAssets[0].chainId}-${strategy.terms.creditAssets[0].address}/${strategy.terms.creditAssets[0].chainId}`]}%
+                                </span>
+                            </div>
+                            <div>
+                                <span>LTV:</span>
+                                <span>
+                                    {strategy.terms.ltv[`${strategy.terms.collateralAssets[0].address}/${strategy.terms.collateralAssets[0].chainId}-${strategy.terms.creditAssets[0].address}/${strategy.terms.creditAssets[0].chainId}`]}%
+                                </span>
+                            </div>
+                        </div>
+
+                        <Link href={`/strategy/${strategy.id}`}>
+                            View Details
+                        </Link>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+```
+
+## 2. Strategy Detail Page
+
+Example of displaying detailed strategy information:
+
+```tsx
+// app/strategy/[id]/page.tsx
+'use client';
+
+import { useParams } from 'next/navigation';
+import { useStrategy } from '@pwndao/sdk-v1-react';
+import { formatUnits } from 'viem';
+
+export default function StrategyDetailPage() {
+  const params = useParams();
+  const strategyId = params.id as string;
+  const { data: strategy, isLoading, error } = useStrategy(strategyId);
+
+  if (isLoading) return <div>Loading strategy...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  if (!strategy) return <div>Strategy not found</div>;
+
+  const firstCollateralAsset = strategy.terms.collateralAssets[0];
+  const firstCreditAsset = strategy.terms.creditAssets[0];
+  const pairKey = `${firstCollateralAsset.address}/${firstCollateralAsset.chainId}-${firstCreditAsset.address}/${firstCreditAsset.chainId}`;
+
+  return (
+    <div>
+      <h1>{strategy.name}</h1>
+      <p>Strategy ID: {strategyId}</p>
+
+      {/* Strategy Overview */}
+      <div>
+        <h2>Overview</h2>
+        <p>{strategy.description}</p>
+
+        {/* Lending Stats */}
+        <div>
+          <h3>Lending Stats</h3>
+          <div>
+            <div>Total Committed: {formatUnits(strategy.lendingStats.totalCommittedAmount, 18)} USD</div>
+            <div>Total Utilized: {formatUnits(strategy.lendingStats.totalUtilizedAmount, 18)} USD</div>
+            <div>Total Available: {formatUnits(strategy.lendingStats.totalAvailableAmount, 18)} USD</div>
+          </div>
+        </div>
+
+        {/* Strategy Terms */}
+        <div>
+          <h3>Terms</h3>
+          <div>APR: {strategy.terms.apr[pairKey]}%</div>
+          <div>LTV: {strategy.terms.ltv[pairKey]}%</div>
+          <div>Duration: {strategy.terms.durationDays} days</div>
+          <div>Expiration: {strategy.terms.expirationDays} days</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+## 3. Creating Strategy Commitments
+
+Example of a component for creating strategy commitments:
+
+```tsx
+// components/StrategyCommitmentCreator.tsx
+'use client';
+
+import { useState } from 'react';
+import { useAccount, useConfig } from 'wagmi';
+import { sepolia } from 'wagmi/chains';
+import { useMakeProposals, useUserWithNonce } from '@pwndao/sdk-v1-react';
+import {
+  ElasticProposalContract,
+  IProposalElasticAPIDeps,
+  Strategy,
+  ProposalType,
+  createUtilizedCreditId,
+  API
+} from '@pwndao/v1-core';
+
+interface Props {
+  strategy: Strategy;
+}
+
+export default function StrategyCommitmentCreator({ strategy }: Props) {
+  const { address, isConnected } = useAccount();
+  const [creditAmount, setCreditAmount] = useState('100');
+  const config = useConfig();
+
+  const {
+    mutateAsync: makeProposal,
+    isPending: isLoading,
+    isSuccess,
+    error,
+  } = useMakeProposals({
+    proposalType: ProposalType.Elastic,
+    api: {
+      persistProposal: API.post.persistProposal,
+      getAssetUsdUnitPrice: API.get.getAssetUsdUnitPrice,
+      persistProposals: API.post.persistProposals,
+      updateNonces: API.post.updateNonce,
+    } as IProposalElasticAPIDeps,
+    contract: new ElasticProposalContract(config),
+  });
+
+  const { userWithNonce: user } = useUserWithNonce([sepolia.id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isConnected || !user) return;
+
+    try {
+      await makeProposal({
+        terms: {
+          user: user,
+          creditAmount: BigInt(creditAmount),
+          ltv: strategy.terms.ltv,
+          apr: strategy.terms.apr,
+          duration: {
+            days: strategy.terms.durationDays,
+          },
+          expirationDays: strategy.terms.expirationDays,
+          utilizedCreditId: createUtilizedCreditId({
+            proposer: address,
+            availableCreditLimit: BigInt(creditAmount),
+          }),
+          minAmountPercentage: Number(strategy.terms.minCreditAmountPercentage),
+        },
+        collateralAssets: strategy.terms.collateralAssets,
+        creditAssets: strategy.terms.creditAssets,
+      });
+    } catch (err) {
+      console.error('Error creating commitment:', err);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div>
+        <label>Credit Amount</label>
+        <input
+          type="text"
+          value={creditAmount}
+          onChange={(e) => setCreditAmount(e.target.value)}
+          placeholder="Enter amount"
+        />
+      </div>
+
+      <div>
+        <h3>Strategy Terms</h3>
+        <div>
+          <div>APR: {strategy.terms.apr[Object.keys(strategy.terms.apr)[0]]}%</div>
+          <div>LTV: {strategy.terms.ltv[Object.keys(strategy.terms.ltv)[0]]}%</div>
+          <div>Duration: {strategy.terms.durationDays} days</div>
+        </div>
+      </div>
+
+      <button type="submit" disabled={isLoading || !isConnected}>
+        {isLoading ? 'Creating Commitment...' : 'Create Commitment'}
+      </button>
+
+      {isSuccess && <div>Commitment created successfully!</div>}
+      {error && <div>Error: {error.message}</div>}
+    </form>
+  );
+}
+```
+
+## Important Considerations
+
+1. **Next.js App Router**
+   - All components are marked with 'use client' as they use React hooks
+   - Follows Next.js 13+ app directory structure
+   - Uses server and client components appropriately
+
+2. **React Query Integration**
+   - Uses TanStack Query for efficient data management
+   - Handles caching and request deduplication
+   - Provides loading and error states
+
+3. **Wallet Integration**
+   - Uses Wagmi for wallet connection
+   - Handles wallet states and chain management
+   - Implements proper error handling for wallet interactions
+
+4. **Type Safety**
+   - Fully typed using TypeScript
+   - Leverages SDK types for consistency
+   - Provides proper type inference
+
+For more detailed examples and advanced usage patterns, check out our [Next.js Example App](https://github.com/pwndao/example-next).
+

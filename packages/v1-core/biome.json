@@ -1,0 +1,17 @@
+{
+  "extends": [
+    "../../biome.json"
+  ],
+  "files": {
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.tsx"
+    ]
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  }
+}

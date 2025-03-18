@@ -1,0 +1,184 @@
+# API Reference
+
+## Core Components
+
+### Strategy
+
+The core data structure representing a lending strategy.
+
+```typescript
+interface Strategy {
+  id: string;
+  name: string;
+  description?: string;
+  terms: {
+    creditAssets: Asset[];
+    collateralAssets: Asset[];
+    apr: Record<string, number>;
+    ltv: Record<string, number>;
+    durationDays: number;
+    expirationDays: number;
+    minCreditAmountPercentage: number;
+  };
+  lendingStats: {
+    totalCommittedAmount: bigint;
+    totalUtilizedAmount: bigint;
+    totalAvailableAmount: bigint;
+  };
+  borrowingStats: {
+    totalBorrowedAmount: bigint;
+    totalRepaidAmount: bigint;
+    totalDefaultedAmount: bigint;
+    activeBorrowedAmount: bigint;
+  };
+  curator?: {
+    name: string;
+    description?: string;
+    avatar?: string;
+  };
+}
+```
+
+### Asset
+
+Represents a token that can be used as credit or collateral.
+
+```typescript
+interface Asset {
+  address: string;
+  chainId: number;
+  name: string;
+  symbol: string;
+  decimals: number;
+}
+```
+
+## React/Next.js Hooks
+
+### useStrategies
+
+Hook for fetching all available strategies.
+
+```typescript
+function useStrategies(chain: SupportedChain) => {
+  data: Strategy[];
+  isLoading: boolean;
+  error: Error | null;
+}
+```
+
+### useStrategy
+
+Hook for fetching a single strategy by ID.
+
+```typescript
+function useStrategy(strategyId: string) => {
+  data: Strategy | null;
+  isLoading: boolean;
+  error: Error | null;
+}
+```
+
+### useMakeProposals
+
+Hook for creating new strategy proposals.
+
+```typescript
+function useMakeProposals(config: {
+  proposalType: ProposalType;
+  api: IProposalElasticAPIDeps;
+  contract: ElasticProposalContract;
+}) => {
+  mutateAsync: (params: ProposalParams) => Promise<void>;
+  isPending: boolean;
+  isSuccess: boolean;
+  error: Error | null;
+}
+```
+
+## Vue.js Composables
+
+### useStrategy
+
+Composable for fetching strategy data.
+
+```typescript
+function useStrategy(strategyId: string) => {
+  data: Strategy | null;
+  isLoading: boolean;
+  error: Error | null;
+}
+```
+
+## Core Functions
+
+### getStrategy
+
+Fetches a strategy by ID.
+
+```typescript
+async function getStrategy(strategyId: string): Promise<Strategy>
+```
+
+### createUtilizedCreditId
+
+Creates a unique ID for a credit utilization.
+
+```typescript
+function createUtilizedCreditId(params: {
+  proposer: string;
+  availableCreditLimit: bigint;
+}): string
+```
+
+## Constants
+
+### ProposalType
+
+Available types of proposals.
+
+```typescript
+enum ProposalType {
+  Elastic = 'elastic'
+  // Add other proposal types as they become available
+}
+```
+
+### SupportedChain
+
+Supported blockchain networks.
+
+```typescript
+enum SupportedChain {
+  World = 'world',
+  Sepolia = 'sepolia'
+  // Add other chains as they become available
+}
+```
+
+## API Dependencies
+
+### IProposalElasticAPIDeps
+
+Interface for required API dependencies when creating proposals.
+
+```typescript
+interface IProposalElasticAPIDeps {
+  persistProposal: typeof API.post.persistProposal;
+  getAssetUsdUnitPrice: typeof API.get.getAssetUsdUnitPrice;
+  persistProposals: typeof API.post.persistProposals;
+  updateNonces: typeof API.post.updateNonce;
+}
+```
+
+## Error Handling
+
+All hooks and functions may throw or return errors in the following cases:
+- Network errors
+- Invalid input parameters
+- Unauthorized access
+- Contract interaction failures
+- Wallet connection issues
+
+It's recommended to always implement proper error handling and loading states in your application.
+

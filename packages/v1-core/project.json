@@ -1,0 +1,24 @@
+{
+  "name": "@pwndao/v1-core",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/v1-core/src",
+  "projectType": "library",
+  "tags": [
+    "sdk-core v1"
+  ],
+  "targets": {
+    "biome-lint": {
+      "executor": "@gitopslovers/nx-biome:biome-lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "packages/v1-core/src/**/*.ts"
+        ],
+        "write": false,
+        "unsafe": false
+      }
+    }
+  }
+}

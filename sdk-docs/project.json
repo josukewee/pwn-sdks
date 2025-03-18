@@ -1,0 +1,33 @@
+{
+  "name": "sdk-docs",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "sdk-docs",
+  "projectType": "application",
+  "tags": [
+    "type:docs",
+    "scope:sdk"
+  ],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vocs dev",
+        "cwd": "sdk-docs"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vocs build",
+        "cwd": "sdk-docs"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vocs preview",
+        "cwd": "sdk-docs"
+      }
+    }
+  }
+}

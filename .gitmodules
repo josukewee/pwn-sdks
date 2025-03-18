@@ -1,0 +1,4 @@
+[submodule "contracts/solidity"]
+	path = contracts/solidity
+	url = git@github.com:PWNDAO/pwn_contracts.git
+	ignore = dirty # ignore changes inside of this repo. RO

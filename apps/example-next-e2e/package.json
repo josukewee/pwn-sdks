@@ -1,0 +1,28 @@
+{
+  "name": "example-react-next-app-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "projectType": "application",
+    "sourceRoot": "apps/example-next-e2e/src",
+    "name": "example-react-next-app-e2e",
+    "implicitDependencies": [
+      "example-react-next-app"
+    ],
+    "targets": {
+      "biome-lint": {
+        "executor": "@gitopslovers/nx-biome:biome-lint",
+        "outputs": [
+          "{options.outputFile}"
+        ],
+        "options": {
+          "lintFilePatterns": [
+            "apps/example-next-e2e/**/*.ts"
+          ],
+          "write": false,
+          "unsafe": false
+        }
+      }
+    }
+  }
+}
