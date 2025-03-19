@@ -1,4 +1,4 @@
-import type { BaseTerm, IServerAPI } from './types.js';
+import type { BaseTerm } from './types.js';
 import type { IOracleProposalBase } from '../models/proposals/proposal-base.js';
 import type {
   IProposalStrategy,
@@ -18,6 +18,11 @@ import type {
 } from '@pwndao/sdk-core';
 import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
 import { getLoanContractAddress } from '@pwndao/sdk-core';
+import { ChainsWithChainLinkFeedSupport, convertNameIntoDenominator, FEED_REGISTRY, isExistBasePair } from 'src/constants.js';
+
+export type CreateChainLinkElasticProposalParams = BaseTerm & {
+  minAmountPercentage: number;
+};
 
 export interface IProposalChainLinkContract extends IProposalContract {
   getProposalHash(proposal: ChainLinkProposal): Promise<Hex>;
@@ -26,7 +31,8 @@ export interface IProposalChainLinkContract extends IProposalContract {
     creditAmount: bigint,
     collateralAddress: AddressString,
     feedIntermediaryDenominations: AddressString[],
-    feedInvertFlags: boolean[]
+    feedInvertFlags: boolean[],
+    loanToValue: bigint
   ): Promise<bigint>;
   createProposal(proposal: ChainLinkProposal): Promise<ProposalWithSignature>;
   createMultiProposal(
@@ -34,11 +40,46 @@ export interface IProposalChainLinkContract extends IProposalContract {
   ): Promise<ProposalWithSignature[]>;
 }
 
-export interface IProposalChainLinkAPIDeps {
-  getAssetUsdUnitPrice: IServerAPI['get']['getAssetUsdUnitPrice'];
-  persistProposal: IServerAPI['post']['persistProposal'];
-  persistProposals: IServerAPI['post']['persistProposals'];
-  updateNonces: IServerAPI['post']['updateNonce'];
+export const getFeedData = (
+  chainId: ChainsWithChainLinkFeedSupport, 
+  base: AddressString, // collateral asset
+  quote: AddressString, // credit asset
+): { feedIntermediaryDenominations: AddressString[], feedInvertFlags: boolean[] } | null => {
+  const baseFeeds = FEED_REGISTRY?.[chainId]?.[base]
+  const quoteFeeds = FEED_REGISTRY?.[chainId]?.[quote]
+  
+  if (!baseFeeds?.length || !quoteFeeds?.length) {
+    return null
+  }
+
+  // e.g. base ==   solvBTC ==> ["BTC"]
+  // e.g. quote ==  USD0    ==> ["USD"]
+
+  // Check for direct route first (1-hop)
+  const commonFeed = baseFeeds.find(_baseFeed => quoteFeeds.includes(_baseFeed))
+  if (commonFeed) {
+    return {
+      feedIntermediaryDenominations: [convertNameIntoDenominator(commonFeed)],
+      feedInvertFlags: [false, true],
+    }
+  }
+
+  // e.g. check for 2-hop route
+  for (const baseFeed of baseFeeds) {
+    for (const quoteFeed of quoteFeeds) {
+      // TODO is this correct or we also need to test some diifferent combination?
+      const _isExistBasePair = isExistBasePair(chainId, baseFeed, quoteFeed)
+      if (_isExistBasePair?.found) {
+        return {
+          feedIntermediaryDenominations: [convertNameIntoDenominator(quoteFeed), convertNameIntoDenominator(baseFeed)],
+          feedInvertFlags: [false, _isExistBasePair.isInverted, true]
+        }
+      } 
+    }
+  }
+
+  // TODO should we throw an error here?
+  return null
 }
 
 export class ChainLinkProposalStrategy
@@ -46,18 +87,15 @@ export class ChainLinkProposalStrategy
 {
   constructor(
     public term: StrategyTerm ,
-    public api: IProposalChainLinkAPIDeps,
     public contract: IProposalChainLinkContract
   ) {}
 
   async implementChainLinkProposal(
     params: CreateChainLinkElasticProposalParams,
-    api: IProposalChainLinkAPIDeps,
     contract: IProposalChainLinkContract
   ): Promise<ChainLinkProposal> {
     // Calculate expiration timestamp
-    const expiration =
-      Math.floor(Date.now() / 1000) + params.expirationDays * 24 * 60 * 60;
+    const expiration = Math.floor(Date.now() / 1000) + params.expirationDays * 24 * 60 * 60;
 
     // Get duration in seconds or timestamp
     let durationOrDate: number;
@@ -67,14 +105,30 @@ export class ChainLinkProposalStrategy
       durationOrDate = Math.floor(params.duration.date.getTime() / 1000);
     }
 
+    const ltv =
+      typeof params.ltv === 'object' 
+        ? params.ltv[
+          `${params.collateral.address}/${params.collateral.chainId}-${params.credit.address}/${params.credit.chainId}`
+        ] ?? 0
+        : params.ltv;
+    // TODO is this correct?
+    const ltvWithDecimals = BigInt(ltv * 100)
+
+    const feedData = getFeedData(params.collateral.chainId, params.collateral.address, params.credit.address)
+    if (!feedData) {
+      // TODO should we throw an error here? probably yes?
+      return
+    }
+
     // Calculate the required collateral amount using ChainLink
     // note: not being used in the proposal data in some of the proposal types
     const collateralAmount = await contract.getCollateralAmount(
       params.credit.address,
       params.creditAmount,
       params.collateral.address,
-      [], // feedIntermediaryDenominations - empty for simplicity
-      [] // feedInvertFlags - empty for simplicity
+      feedData.feedIntermediaryDenominations,
+      feedData.feedInvertFlags,
+      ltvWithDecimals,
     );
 
     // Get common proposal fields
@@ -100,9 +154,9 @@ export class ChainLinkProposalStrategy
     return new ChainLinkProposal(
       {
         ...commonFields,
-        feedIntermediaryDenominations: [],
-        feedInvertFlags: [],
-        loanToValue: params.ltv,
+        feedIntermediaryDenominations: feedData.feedIntermediaryDenominations,
+        feedInvertFlags: feedData.feedInvertFlags,
+        loanToValue: ltvWithDecimals,
         minCreditAmount: collateralAmount,
         chainId: params.collateral.chainId,
       },
@@ -124,7 +178,6 @@ export class ChainLinkProposalStrategy
           user,
           creditAmount,
           utilizedCreditId,
-
           apr: this.term.apr,
           duration: {
             days: this.term.durationDays,
@@ -159,7 +212,6 @@ export class ChainLinkProposalStrategy
           // Use the shared implementation directly
           return await this.implementChainLinkProposal(
             params,
-            this.api,
             this.contract
           );
         } catch (error) {
@@ -179,12 +231,7 @@ export class ChainLinkProposalStrategy
   }
 }
 
-export type CreateChainLinkElasticProposalParams = BaseTerm & {
-  minAmountPercentage: number;
-};
-
 export type ChainLinkElasticProposalDeps = {
-  api: IProposalChainLinkAPIDeps;
   contract: IProposalChainLinkContract;
 }
 
@@ -205,7 +252,6 @@ export const createChainLinkElasticProposal = async (
 
   const strategy = new ChainLinkProposalStrategy(
     dummyTerm,
-    deps.api,
     deps.contract as IProposalChainLinkContract
   );
   const proposals = await strategy.createLendingProposals(
@@ -253,7 +299,6 @@ export const createChainLinkElasticProposalBatch = async (
   // Create a strategy and generate all proposals
   const strategy = new ChainLinkProposalStrategy(
     dummyTerm,
-    deps.api,
     deps.contract
   );
   const proposals = await strategy.createLendingProposals(
