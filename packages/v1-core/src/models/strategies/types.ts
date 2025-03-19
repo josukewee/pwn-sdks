@@ -25,7 +25,7 @@ export interface StrategyTerm {
 	 * The minimum credit amount percentage for a proposal to be created
 	 * With 1e4 precision
 	 */
-	minCreditAmountPercentage: bigint;
+	minCreditAmountPercentage: number;
 	id?: string; // if provided it's strategy id
 }
 

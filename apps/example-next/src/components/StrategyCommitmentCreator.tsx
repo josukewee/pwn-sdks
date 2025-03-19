@@ -83,7 +83,8 @@ export default function StrategyCommitmentCreator({
 						proposer: address,
 						availableCreditLimit: BigInt(creditAmount),
 					}),
-					minAmountPercentage: Number(strategy.terms.minCreditAmountPercentage),
+					minCreditAmountPercentage:
+						strategy.terms.minCreditAmountPercentage,
 				},
 				collateralAssets: strategy.terms.collateralAssets,
 				creditAssets: strategy.terms.creditAssets,

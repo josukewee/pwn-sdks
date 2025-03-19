@@ -135,9 +135,7 @@ export class ChainLinkProposalStrategy
 					},
 					ltv: this.term.ltv,
 					expirationDays: this.term.expirationDays,
-					minAmountPercentage: Number(
-						this.term.minCreditAmountPercentage / 1000n,
-					),
+					minCreditAmountPercentage: this.term.minCreditAmountPercentage / 1000,
 					relatedStrategyId: this.term.id,
 				});
 			}
@@ -185,7 +183,7 @@ export class ChainLinkProposalStrategy
 }
 
 export type CreateChainLinkElasticProposalParams = BaseTerm & {
-	minAmountPercentage: number;
+	minCreditAmountPercentage: number;
 };
 
 export const createChainLinkElasticProposal = async (
@@ -203,7 +201,7 @@ export const createChainLinkElasticProposal = async (
 		durationDays: params.duration.days || 0,
 		ltv: params.ltv,
 		expirationDays: params.expirationDays,
-		minCreditAmountPercentage: BigInt(params.minAmountPercentage),
+		minCreditAmountPercentage: params.minCreditAmountPercentage,
 	};
 
 	const strategy = new ChainLinkProposalStrategy(
