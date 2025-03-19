@@ -23,8 +23,7 @@
     "ts-invariant": "^0.10.3",
     "viem": "^2.23.6",
     "vue": "^3.3.4",
-    "vue-router": "^4.2.4",
-    "wagmi": "^2.14.15"
+    "vue-router": "^4.2.4"
   },
   "devDependencies": {
     "@ahryman40k/nx-vitepress": "^15.1.1",
