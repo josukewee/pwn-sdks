@@ -68,7 +68,7 @@ describe("Test make proposal", () => {
 				},
 				expirationDays,
 				utilizedCreditId: generateAddress(), // Utilized credit is essentialy 32 bytes
-				minAmountPercentage: 3,
+				minCreditAmountPercentage: 3,
 			},
 			{
 				api: {

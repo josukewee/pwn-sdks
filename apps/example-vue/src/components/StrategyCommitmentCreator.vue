@@ -79,9 +79,8 @@ const handleSubmit = async (e: Event) => {
 					proposer: address.value,
 					availableCreditLimit: BigInt(creditAmount.value),
 				}),
-				minAmountPercentage: Number(
+				minCreditAmountPercentage:
 					props.strategy.terms.minCreditAmountPercentage,
-				),
 			},
 			collateralAssets: props.strategy.terms.collateralAssets,
 			creditAssets: props.strategy.terms.creditAssets,

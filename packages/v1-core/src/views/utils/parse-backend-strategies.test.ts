@@ -19,7 +19,7 @@ describe("Parse Backend strategies reponse test", () => {
 		expect(parsedData.terms.collateralAssets).toBeDefined();
 		expect(parsedData.terms.durationDays).toEqual(90);
 		expect(parsedData.terms.expirationDays).toEqual(30);
-		expect(parsedData.terms.minCreditAmountPercentage).toEqual(10n); // 0.01 * 1e4
+		expect(parsedData.terms.minCreditAmountPercentage).toEqual(10); // 0.01 * 1e4
 
 		expect(parsedData.terms.collateralAssets.length).toEqual(1);
 		expect(parsedData.terms.collateralAssets[0].address).toEqual(

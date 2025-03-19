@@ -60,10 +60,7 @@ export const parseBackendStrategiesResponse = (
 			backendData.collateralAssets?.map(parseStrategyToken) || [],
 		durationDays: backendData.loanDurationDays,
 		expirationDays: backendData.proposalExpirationDays,
-		minCreditAmountPercentage: BigInt(
-			backendData.minAllowedBorrowPercentage * 1000,
-		),
-
+		minCreditAmountPercentage: backendData.minAllowedBorrowPercentage * 1000,
 		id: backendData.id,
 	};
 
