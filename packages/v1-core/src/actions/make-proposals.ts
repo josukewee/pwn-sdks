@@ -6,8 +6,8 @@ import {
 	createElasticProposalBatch,
 } from "../factories/create-elastic-proposal.js";
 import { ProposalType } from "../models/proposals/proposal-base.js";
-import { createChainLinkElasticProposalBatch } from "src/factories/create-chain-link-proposal.js";
-import type { ChainLinkElasticProposalDeps } from "src/factories/create-chain-link-proposal.js";
+import { createChainLinkElasticProposalBatch } from "../factories/create-chain-link-proposal.js";
+import type { ChainLinkElasticProposalDeps } from "../factories/create-chain-link-proposal.js";
 import type { ElasticProposal } from "src/models/proposals/elastic-proposal.js";
 import type { ChainLinkProposal } from "src/models/proposals/chainlink-proposal.js";
 

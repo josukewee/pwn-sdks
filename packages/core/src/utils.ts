@@ -5,7 +5,7 @@ export const getLoanContractAddress = (chainId: SupportedChain) => {
 	return CHAIN_TO_ADDRESSES_MAP[chainId].pwnLoan;
 };
 
-export const getPwnSimpleLoanSimpleProposalAddress = (
+export const getPwnSimpleLoanAddress = (
 	chainId: SupportedChain,
 ) => {
 	return CHAIN_TO_ADDRESSES_MAP[chainId].pwnSimpleLoan;

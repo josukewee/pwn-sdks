@@ -2,8 +2,10 @@ import { AddressString, SupportedChain, typeSafeObjectKeys } from "@pwndao/sdk-c
 
 export const CREDIT_PER_COLLATERAL_UNIT_DENOMINATOR = 1e38;
 
-// things related to chainlink feed registry
-export const ENABLED_QUOTES = ['USD', 'ETH', 'BTC'] as const
+export const ENABLED_QUOTES = {
+    [SupportedChain.Ethereum]: ['BTC', 'ETH', 'USD'] as const,
+    [SupportedChain.Base]: ['BTC', 'ETH', 'USD', 'EUR'] as const
+} as const
 
 const LBTC = {
     [SupportedChain.Ethereum]: "0x8236a87084f8b84306f72007f36f2618a5634494",
@@ -112,16 +114,12 @@ const cbBTC = {
     [SupportedChain.Base]: "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf"
 }
 
-// TODO how to represent ETH / BTC pair?
-// TODO how to represent BTC / ETH pair?
-// TODO how to represent ETH / USD pair?
-// TODO how to represent BTC / USD pair?
 const EXISTING_BASE_PAIRS = {
     [SupportedChain.Ethereum]: ["BTC/USD", "ETH/USD", "ETH/BTC", "BTC/ETH"],
     [SupportedChain.Base]: ["BTC/USD", "ETH/USD", "EUR/USD"]
 }
 
-export const CHAINS_WITH_CHAINLINK_FEED_SUPPORT = typeSafeObjectKeys(FEED_REGISTRY)
+export const CHAINS_WITH_CHAINLINK_FEED_SUPPORT = typeSafeObjectKeys(EXISTING_BASE_PAIRS)
 export type ChainsWithChainLinkFeedSupport = typeof CHAINS_WITH_CHAINLINK_FEED_SUPPORT[number]
 
 const ALLOWED_DENOMINATORS = ["BTC", "USD", "ETH"] as const
@@ -158,14 +156,14 @@ export const isExistBasePair = (chainId: ChainsWithChainLinkFeedSupport, base: A
     }
 }
 
-type AllowedQuotes = typeof ENABLED_QUOTES[number]
+type AllowedQuotes<T extends ChainsWithChainLinkFeedSupport> = typeof ENABLED_QUOTES[T][number]
 
-type FeedRegistryChainEntry = {
-    [tokenAddress: AddressString]: readonly AllowedQuotes[]
+type FeedRegistryChainEntry<T extends ChainsWithChainLinkFeedSupport> = {
+    [tokenAddress: AddressString]: readonly AllowedQuotes<T>[]
 }
 
 type FeedRegistryType = {
-    [chain in SupportedChain.Ethereum | SupportedChain.Base]: FeedRegistryChainEntry
+    [T in ChainsWithChainLinkFeedSupport]: FeedRegistryChainEntry<T>
 }
 
 export const FEED_REGISTRY = {

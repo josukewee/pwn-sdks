@@ -1,14 +1,11 @@
-import type { BaseTerm } from './types.js';
+import type { BaseTerm, IServerAPI } from './types.js';
 import type { IOracleProposalBase } from '../models/proposals/proposal-base.js';
 import type {
   IProposalStrategy,
-  ProposalWithHash,
-  ProposalWithSignature,
   StrategyTerm,
 } from '../models/strategies/types.js';
 import {
   getLendingCommonProposalFields,
-  type IProposalContract,
 } from './helpers.js';
 import type {
   Hex,
@@ -18,27 +15,8 @@ import type {
 } from '@pwndao/sdk-core';
 import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
 import { getLoanContractAddress } from '@pwndao/sdk-core';
-import { ChainsWithChainLinkFeedSupport, convertNameIntoDenominator, FEED_REGISTRY, isExistBasePair } from 'src/constants.js';
-
-export type CreateChainLinkElasticProposalParams = BaseTerm & {
-  minAmountPercentage: number;
-};
-
-export interface IProposalChainLinkContract extends IProposalContract {
-  getProposalHash(proposal: ChainLinkProposal): Promise<Hex>;
-  getCollateralAmount(
-    creditAddress: AddressString,
-    creditAmount: bigint,
-    collateralAddress: AddressString,
-    feedIntermediaryDenominations: AddressString[],
-    feedInvertFlags: boolean[],
-    loanToValue: bigint
-  ): Promise<bigint>;
-  createProposal(proposal: ChainLinkProposal): Promise<ProposalWithSignature>;
-  createMultiProposal(
-    proposals: ProposalWithHash[]
-  ): Promise<ProposalWithSignature[]>;
-}
+import { ChainsWithChainLinkFeedSupport, convertNameIntoDenominator, FEED_REGISTRY, isExistBasePair } from '../constants.js';
+import { IProposalChainLinkContract } from 'src/contracts/chain-link-proposal-contract.js';
 
 export const getFeedData = (
   chainId: ChainsWithChainLinkFeedSupport, 
@@ -56,6 +34,7 @@ export const getFeedData = (
   // e.g. quote ==  USD0    ==> ["USD"]
 
   // Check for direct route first (1-hop)
+  // @ts-expect-error not sure why this is not working
   const commonFeed = baseFeeds.find(_baseFeed => quoteFeeds.includes(_baseFeed))
   if (commonFeed) {
     return {
@@ -82,6 +61,10 @@ export const getFeedData = (
   return null
 }
 
+export type CreateChainLinkElasticProposalParams = BaseTerm & {
+	minCreditAmountPercentage: number;
+};
+
 export class ChainLinkProposalStrategy
   implements IProposalStrategy<IOracleProposalBase>
 {
@@ -93,7 +76,7 @@ export class ChainLinkProposalStrategy
   async implementChainLinkProposal(
     params: CreateChainLinkElasticProposalParams,
     contract: IProposalChainLinkContract
-  ): Promise<ChainLinkProposal> {
+  ): Promise<ChainLinkProposal | undefined> {
     // Calculate expiration timestamp
     const expiration = Math.floor(Date.now() / 1000) + params.expirationDays * 24 * 60 * 60;
 
@@ -114,22 +97,13 @@ export class ChainLinkProposalStrategy
     // TODO is this correct?
     const ltvWithDecimals = BigInt(ltv * 100)
 
-    const feedData = getFeedData(params.collateral.chainId, params.collateral.address, params.credit.address)
+    const feedData = getFeedData(params.collateral.chainId as ChainsWithChainLinkFeedSupport, params.collateral.address, params.credit.address)
     if (!feedData) {
       // TODO should we throw an error here? probably yes?
-      return
+      return 
     }
 
-    // Calculate the required collateral amount using ChainLink
-    // note: not being used in the proposal data in some of the proposal types
-    const collateralAmount = await contract.getCollateralAmount(
-      params.credit.address,
-      params.creditAmount,
-      params.collateral.address,
-      feedData.feedIntermediaryDenominations,
-      feedData.feedInvertFlags,
-      ltvWithDecimals,
-    );
+    const minCreditAmount = (BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(100);
 
     // Get common proposal fields
     const commonFields = await getLendingCommonProposalFields(
@@ -157,7 +131,7 @@ export class ChainLinkProposalStrategy
         feedIntermediaryDenominations: feedData.feedIntermediaryDenominations,
         feedInvertFlags: feedData.feedInvertFlags,
         loanToValue: ltvWithDecimals,
-        minCreditAmount: collateralAmount,
+        minCreditAmount,
         chainId: params.collateral.chainId,
       },
       params.collateral.chainId
@@ -179,14 +153,14 @@ export class ChainLinkProposalStrategy
           creditAmount,
           utilizedCreditId,
           apr: this.term.apr,
-          duration: {
-            days: this.term.durationDays,
-            date: undefined,
-          },
-          ltv: this.term.ltv,
-          expirationDays: this.term.expirationDays,
-          minAmountPercentage: Number(this.term.minCreditAmountPercentage),
-          relatedStrategyId: this.term.id,
+					duration: {
+						days: this.term.durationDays,
+						date: undefined,
+					},
+					ltv: this.term.ltv,
+					expirationDays: this.term.expirationDays,
+					minCreditAmountPercentage: this.term.minCreditAmountPercentage / 1000,
+					relatedStrategyId: this.term.id,
         });
       }
     }
@@ -222,7 +196,7 @@ export class ChainLinkProposalStrategy
     );
 
     for (const proposal of proposals) {
-      if (proposal.status === 'fulfilled') {
+      if (proposal.status === 'fulfilled' && proposal.value) {
         result.push(proposal.value);
       }
     }
@@ -231,7 +205,16 @@ export class ChainLinkProposalStrategy
   }
 }
 
+// TODO create some base interface that contains all the necessary 
+//  API deps for e.g. makeProposal / makeProposals functions (and some other shared functions?)?
+export interface IProposalChainLinkAPIDeps {
+	persistProposal: IServerAPI["post"]["persistProposal"];
+	persistProposals: IServerAPI["post"]["persistProposals"];
+	updateNonces: IServerAPI["post"]["updateNonce"];
+}
+
 export type ChainLinkElasticProposalDeps = {
+  api: IProposalChainLinkAPIDeps
   contract: IProposalChainLinkContract;
 }
 
@@ -239,16 +222,16 @@ export const createChainLinkElasticProposal = async (
   params: CreateChainLinkElasticProposalParams,
   deps: ChainLinkElasticProposalDeps
 ): Promise<ChainLinkProposal> => {
-  // Create a dummy StrategyTerm with just enough data for the strategy to work
-  const dummyTerm: StrategyTerm = {
-    creditAssets: [params.credit],
-    collateralAssets: [params.collateral],
-    apr: params.apr,
-    durationDays: params.duration.days || 0,
-    ltv: params.ltv,
-    expirationDays: params.expirationDays,
-    minCreditAmountPercentage: BigInt(params.minAmountPercentage),
-  };
+	// Create a dummy StrategyTerm with just enough data for the strategy to work
+	const dummyTerm: StrategyTerm = {
+		creditAssets: [params.credit],
+		collateralAssets: [params.collateral],
+		apr: params.apr,
+		durationDays: params.duration.days || 0,
+		ltv: params.ltv,
+		expirationDays: params.expirationDays,
+		minCreditAmountPercentage: params.minCreditAmountPercentage,
+	};
 
   const strategy = new ChainLinkProposalStrategy(
     dummyTerm,
@@ -267,7 +250,7 @@ export const createChainLinkElasticProposal = async (
  */
 export type CreateChainLinkElasticProposalBatchParams = {
   terms: Omit<BaseTerm, 'collateral' | 'credit'> & {
-    minAmountPercentage: number;
+    minCreditAmountPercentage: number;
   };
   collateralAssets: Token[];
   creditAssets: Token[];
@@ -292,7 +275,8 @@ export const createChainLinkElasticProposalBatch = async (
     durationDays: params.terms.duration.days || 0,
     ltv: params.terms.ltv,
     expirationDays: params.terms.expirationDays,
-    minCreditAmountPercentage: BigInt(params.terms.minAmountPercentage),
+    // TODO is this correct? previously was here conversion to BigInt
+    minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
     // id: '1',
   };
 

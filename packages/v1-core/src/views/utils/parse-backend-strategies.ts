@@ -7,8 +7,9 @@ import invariant from "ts-invariant";
 import type { Strategy, StrategyTerm } from "../../models/strategies/types.js";
 
 type AssetModel = CollateralAssetInThesisSchemaWorkaround;
+type CreditAssetModel = Omit<AssetModel, "ltv" | "apr" | "allocationPercentage">;
 
-const parseStrategyToken = (token: AssetModel) => {
+const parseStrategyToken = (token: AssetModel | CreditAssetModel) => {
 	invariant(token.decimals !== null, "token.decimals is required");
 	return new ERC20Token(
 		token.chainId,
@@ -21,7 +22,7 @@ const parseStrategyToken = (token: AssetModel) => {
 
 const generateLtvMapping = (
 	collateralAssets: AssetModel[],
-	creditAssets: Omit<AssetModel, "ltv" | "apr" | "allocationPercentage">[],
+	creditAssets: CreditAssetModel[],
 	ltv: ThesisSchemaWorkaround["ltv"],
 ) => {
 	invariant(
@@ -55,15 +56,12 @@ export const parseBackendStrategiesResponse = (
 			creditAssets || [],
 			backendData.ltv,
 		),
-		creditAssets: creditAssets.map(parseStrategyToken),
+		creditAssets: creditAssets.map((v) => parseStrategyToken(v)),
 		collateralAssets:
 			backendData.collateralAssets?.map(parseStrategyToken) || [],
 		durationDays: backendData.loanDurationDays,
 		expirationDays: backendData.proposalExpirationDays,
-		minCreditAmountPercentage: BigInt(
-			backendData.minAllowedBorrowPercentage * 1000,
-		),
-
+		minCreditAmountPercentage: backendData.minAllowedBorrowPercentage * 1000,
 		id: backendData.id,
 	};
 

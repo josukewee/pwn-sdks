@@ -5,19 +5,17 @@ import { ElasticProposal } from "../models/proposals/elastic-proposal.js";
 import type { IElasticProposalBase } from "../models/proposals/proposal-base.js";
 import type {
 	IProposalStrategy,
-	ProposalWithHash,
-	ProposalWithSignature,
 	StrategyTerm,
 } from "../models/strategies/types.js";
 import { calculateCreditPerCollateralUnit } from "../utils/calculations.js";
 import {
-	type IProposalContract,
 	getLendingCommonProposalFields,
 } from "./helpers.js";
 import type { BaseTerm, IServerAPI } from "./types.js";
+import { IProposalElasticContract } from "src/contracts/elastic-proposal-contract.js";
 
 export type CreateElasticProposalParams = BaseTerm & {
-	minAmountPercentage: number;
+	minCreditAmountPercentage: number;
 };
 
 export interface IProposalElasticAPIDeps {
@@ -25,15 +23,6 @@ export interface IProposalElasticAPIDeps {
 	getAssetUsdUnitPrice: IServerAPI["get"]["getAssetUsdUnitPrice"];
 	persistProposals: IServerAPI["post"]["persistProposals"];
 	updateNonces: IServerAPI["post"]["updateNonce"];
-}
-
-export interface IProposalElasticContract extends IProposalContract {
-	getCollateralAmount(proposal: ElasticProposal): Promise<bigint>;
-	getProposalHash(proposal: ElasticProposal): Promise<Hex>;
-	createProposal(proposal: ElasticProposal): Promise<ProposalWithSignature>;
-	createMultiProposal(
-		proposals: ProposalWithHash[],
-	): Promise<ProposalWithSignature[]>;
 }
 
 export class ElasticProposalStrategy
@@ -72,7 +61,7 @@ export class ElasticProposalStrategy
 			(params.creditAmount * creditUsdPrice) /
 			BigInt(10 ** params.credit.decimals);
 		const minCreditAmountUsd =
-			(BigInt(params.minAmountPercentage) * params.creditAmount) / BigInt(100);
+			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(100);
 
 		const ltv =
 			typeof params.ltv === 'object' 
@@ -156,7 +145,7 @@ export class ElasticProposalStrategy
 					},
 					ltv: this.term.ltv,
 					expirationDays: this.term.expirationDays,
-					minAmountPercentage: Number(this.term.minCreditAmountPercentage),
+					minCreditAmountPercentage: this.term.minCreditAmountPercentage,
 					relatedStrategyId: this.term.id,
 				});
 			}
@@ -236,7 +225,7 @@ export const createElasticProposal = async (
 		durationDays: params.duration.days || 0,
 		ltv: params.ltv,
 		expirationDays: params.expirationDays,
-		minCreditAmountPercentage: BigInt(params.minAmountPercentage),
+		minCreditAmountPercentage: params.minCreditAmountPercentage,
 	};
 
 	const strategy = new ElasticProposalStrategy(
@@ -257,7 +246,7 @@ export const createElasticProposal = async (
  */
 export type CreateElasticProposalBatchParams = {
 	terms: Omit<BaseTerm, "collateral" | "credit"> & {
-		minAmountPercentage: number;
+		minCreditAmountPercentage: number;
 	};
 	collateralAssets: Token[];
 	creditAssets: Token[];
@@ -282,7 +271,7 @@ export const createElasticProposalBatch = async (
 		durationDays: params.terms.duration.days || 0,
 		ltv: params.terms.ltv,
 		expirationDays: params.terms.expirationDays,
-		minCreditAmountPercentage: BigInt(params.terms.minAmountPercentage),
+		minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
 		id: "1",
 	};
 
