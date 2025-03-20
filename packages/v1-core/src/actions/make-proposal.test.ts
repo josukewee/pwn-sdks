@@ -69,6 +69,8 @@ describe("Test make proposal", () => {
 				expirationDays,
 				utilizedCreditId: generateAddress(), // Utilized credit is essentialy 32 bytes
 				minCreditAmountPercentage: 3,
+				relatedStrategyId: "1",
+				isOffer: true
 			},
 			{
 				api: {
@@ -114,5 +116,6 @@ describe("Test make proposal", () => {
 		expect(proposal.loanContract).toBe(
 			getLoanContractAddress(SupportedChain.Ethereum),
 		);
+		expect(proposal.relatedStrategyId).toBe("1");
 	});
 });

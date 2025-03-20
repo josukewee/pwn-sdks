@@ -27,6 +27,8 @@ export interface StrategyTerm {
 	 */
 	minCreditAmountPercentage: number;
 	id?: string; // if provided it's strategy id
+	relatedStrategyId?: string;
+	isOffer: boolean;
 }
 
 export interface IProposalStrategy<
