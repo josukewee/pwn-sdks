@@ -18,6 +18,8 @@ import type { BaseTerm, IServerAPI } from "./types.js";
 
 export type CreateElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
+	relatedStrategyId?: string;
+	isOffer: boolean;
 };
 
 export interface IProposalElasticAPIDeps {
@@ -101,7 +103,7 @@ export class ElasticProposalStrategy
 				apr: params.apr,
 				expiration,
 				loanContract: getLoanContractAddress(params.collateral.chainId),
-				relatedStrategyId: this.term.id,
+				relatedStrategyId: this.term.relatedStrategyId,
 			},
 			{
 				contract: contract,
@@ -121,6 +123,7 @@ export class ElasticProposalStrategy
 				minCreditAmount: minCreditAmountUsd,
 				availableCreditLimit: params.creditAmount,
 				chainId: params.collateral.chainId,
+				isOffer: params.isOffer
 			},
 			params.collateral.chainId,
 		);
@@ -157,7 +160,8 @@ export class ElasticProposalStrategy
 					ltv: this.term.ltv,
 					expirationDays: this.term.expirationDays,
 					minCreditAmountPercentage: this.term.minCreditAmountPercentage,
-					relatedStrategyId: this.term.id,
+					relatedStrategyId: this.term.relatedStrategyId,
+					isOffer: this.term.isOffer
 				});
 			}
 		}
@@ -237,6 +241,8 @@ export const createElasticProposal = async (
 		ltv: params.ltv,
 		expirationDays: params.expirationDays,
 		minCreditAmountPercentage: params.minCreditAmountPercentage,
+		relatedStrategyId: params.relatedStrategyId,
+		isOffer: params.isOffer
 	};
 
 	const strategy = new ElasticProposalStrategy(
@@ -258,6 +264,8 @@ export const createElasticProposal = async (
 export type CreateElasticProposalBatchParams = {
 	terms: Omit<BaseTerm, "collateral" | "credit"> & {
 		minCreditAmountPercentage: number;
+		relatedThesisId?: string;
+		isOffer: boolean;
 	};
 	collateralAssets: Token[];
 	creditAssets: Token[];
@@ -284,6 +292,8 @@ export const createElasticProposalBatch = async (
 		expirationDays: params.terms.expirationDays,
 		minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
 		id: "1",
+		relatedStrategyId: params.terms.relatedStrategyId,
+		isOffer: params.terms.isOffer
 	};
 
 	// Create a strategy and generate all proposals

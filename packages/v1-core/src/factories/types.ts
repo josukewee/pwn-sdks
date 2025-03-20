@@ -35,6 +35,7 @@ export type BaseTerm = {
 	expirationDays: number;
 	utilizedCreditId: Hex;
 	relatedStrategyId?: string;
+	isOffer: boolean;
 };
 
 export interface IServerAPI {

@@ -81,6 +81,8 @@ const handleSubmit = async (e: Event) => {
 				}),
 				minCreditAmountPercentage:
 					props.strategy.terms.minCreditAmountPercentage,
+        isOffer: true,
+        relatedStrategyId: props.strategy.id,
 			},
 			collateralAssets: props.strategy.terms.collateralAssets,
 			creditAssets: props.strategy.terms.creditAssets,
