@@ -13,7 +13,7 @@ export default defineConfig(() => ({
     host: 'localhost',
     proxy: {
       '/api': {
-        target: 'https://api-staging.pwn.xyz',
+        target: 'https://dev-3.pwn.xyz',
         changeOrigin: true,
       },
     },
