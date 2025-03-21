@@ -1,4 +1,5 @@
 import { CREDIT_PER_COLLATERAL_UNIT_DENOMINATOR } from "../constants.js";
+import { Decimal } from "decimal.js";
 
 // note: if you want to calculate min credit amonut, pass minCollateralAmount as collateralAmount arg
 export const calculateCreditAmount = (
@@ -23,8 +24,13 @@ export const calculateCollateralBasedOnLtv = (
 };
 
 export const calculateCreditPerCollateralUnit = (
-	credit: bigint,
-	collateral: bigint,
-): bigint => {
-	return (credit * BigInt(CREDIT_PER_COLLATERAL_UNIT_DENOMINATOR)) / collateral;
-};
+	creditBigInt: bigint, 
+	collateralBigInt: bigint
+) => {
+	const credit = new Decimal(creditBigInt.toString())
+	const collateral = new Decimal(collateralBigInt.toString())
+	const denominator = new Decimal(CREDIT_PER_COLLATERAL_UNIT_DENOMINATOR)
+  
+	const result = credit.times(denominator).dividedBy(collateral)
+	return result.toFixed(0) // Convert back to string with no decimals
+  }

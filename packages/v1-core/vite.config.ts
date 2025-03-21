@@ -44,6 +44,7 @@ export default defineConfig({
 				"viem",
 				"wagmi/core",
 				"@pwndao/api-sdk",
+				"decimal.js",
 			],
 		},
 	},
