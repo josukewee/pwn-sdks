@@ -4,7 +4,8 @@ export const CREDIT_PER_COLLATERAL_UNIT_DENOMINATOR = 1e38;
 
 export const ENABLED_QUOTES = {
     [SupportedChain.Ethereum]: ['BTC', 'ETH', 'USD'] as const,
-    [SupportedChain.Base]: ['BTC', 'ETH', 'USD', 'EUR'] as const
+    [SupportedChain.Base]: ['BTC', 'ETH', 'USD', 'EUR'] as const,
+    [SupportedChain.Sepolia]: ['ETH', 'USD']
 } as const
 
 export const LBTC = {
@@ -52,16 +53,19 @@ export const weETH = {
 
 export const DAI = {
     [SupportedChain.Ethereum]: "0x6b175474e89094c44da98b954eedeac495271d0f",
-    [SupportedChain.Base]: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb"
+    [SupportedChain.Base]: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+    [SupportedChain.Sepolia]: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357"
 }
 
 export const TUSD = {
     [SupportedChain.Ethereum]: "0x0000000000085d4780b73119b644ae5ecd22b376"
 }
 
+// TODO convert all addresses to checksum
 export const USDC = {
     [SupportedChain.Ethereum]: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-    [SupportedChain.Base]: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
+    [SupportedChain.Base]: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    [SupportedChain.Sepolia]: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"
 }
 
 export const USDT = {
@@ -114,12 +118,13 @@ export const cbBTC = {
     [SupportedChain.Base]: "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf"
 }
 
-const EXISTING_BASE_PAIRS = {
+const EXISTING_QUOTE_PAIRS = {
     [SupportedChain.Ethereum]: ["BTC/USD", "ETH/USD", "ETH/BTC", "BTC/ETH"],
     [SupportedChain.Base]: ["BTC/USD", "ETH/USD", "EUR/USD"],
+    [SupportedChain.Sepolia]: ['BTC/USD', 'BTC/ETH']
 }
 
-export const CHAINS_WITH_CHAINLINK_FEED_SUPPORT = typeSafeObjectKeys(EXISTING_BASE_PAIRS)
+export const CHAINS_WITH_CHAINLINK_FEED_SUPPORT = typeSafeObjectKeys(EXISTING_QUOTE_PAIRS)
 export type ChainsWithChainLinkFeedSupport = typeof CHAINS_WITH_CHAINLINK_FEED_SUPPORT[number]
 
 const ALLOWED_DENOMINATORS = ["BTC", "USD", "ETH"] as const
@@ -127,13 +132,13 @@ export type AllowedDenominatorsEnum = typeof ALLOWED_DENOMINATORS[number]
 
 type IsExistBasePairResult = { found: true, isInverted: boolean } | { found:false } | undefined
 export const isExistBasePair = (chainId: ChainsWithChainLinkFeedSupport, base: AllowedDenominatorsEnum, quote: AllowedDenominatorsEnum): IsExistBasePairResult => {
-    if (!CHAINS_WITH_CHAINLINK_FEED_SUPPORT.some(_chain => _chain === chainId)) {
+    if (!CHAINS_WITH_CHAINLINK_FEED_SUPPORT.every(_chain => _chain !== chainId)) {
         // TODO what to do here?
         // TODO should we throw 
         return undefined
     }
     
-    const exactMatch = EXISTING_BASE_PAIRS[chainId].find(pair => pair === `${base}/${quote}`)
+    const exactMatch = EXISTING_QUOTE_PAIRS[chainId].find(pair => pair === `${base}/${quote}`)
     if (exactMatch) {
         return {
             found: true,
@@ -141,7 +146,7 @@ export const isExistBasePair = (chainId: ChainsWithChainLinkFeedSupport, base: A
         }
     }
 
-    const invertedMatch = EXISTING_BASE_PAIRS[chainId as SupportedChain.Ethereum | SupportedChain.Base].find(pair => {
+    const invertedMatch = EXISTING_QUOTE_PAIRS[chainId as SupportedChain.Ethereum | SupportedChain.Base].find(pair => {
         return pair.includes(base) && pair.includes(quote)
     })
     if (!invertedMatch) {
@@ -209,6 +214,10 @@ export const FEED_REGISTRY = {
         [WBTC[SupportedChain.Base]]: ["USD"],
         [cbBTC[SupportedChain.Base]]: ["USD"],
         [sUSDe[SupportedChain.Base]]: ["USD"]
+    },
+    [SupportedChain.Sepolia]: {
+        [DAI[SupportedChain.Sepolia]]: ["USD"],
+        [USDC[SupportedChain.Sepolia]]: ["USD"]
     }
 } as const satisfies FeedRegistryType
 

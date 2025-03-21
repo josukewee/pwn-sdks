@@ -26,7 +26,7 @@ export const getFeedData = (
 ): { feedIntermediaryDenominations: AddressString[], feedInvertFlags: boolean[] } | null => {
   const baseFeeds = FEED_REGISTRY?.[chainId]?.[base]
   const quoteFeeds = FEED_REGISTRY?.[chainId]?.[quote]
-  
+
   if (!baseFeeds?.length || !quoteFeeds?.length) {
     return null
   }
@@ -44,12 +44,14 @@ export const getFeedData = (
     }
   }
 
+  // TODO check that the invert flags values are always correct
   // e.g. check for 2-hop route
-  for (const baseFeed of baseFeeds) {
-    for (const quoteFeed of quoteFeeds) {
+  for (const quoteFeed of quoteFeeds) {
+    for (const baseFeed of baseFeeds) {
       // TODO is this correct or we also need to test some diifferent combination?
-      const _isExistBasePair = isExistBasePair(chainId, baseFeed, quoteFeed)
+      const _isExistBasePair = isExistBasePair(chainId, quoteFeed, baseFeed)
       if (_isExistBasePair?.found) {
+        // TODO check if does not match also non inverted to have the algo deterministic?
         return {
           feedIntermediaryDenominations: [convertNameIntoDenominator(quoteFeed), convertNameIntoDenominator(baseFeed)],
           feedInvertFlags: [false, _isExistBasePair.isInverted, true]
@@ -96,16 +98,20 @@ export class ChainLinkProposalStrategy
           `${params.collateral.address}/${params.collateral.chainId}-${params.credit.address}/${params.credit.chainId}`
         ] ?? 0
         : params.ltv;
+
     // TODO is this correct?
     const ltvWithDecimals = BigInt(ltv * 100)
 
     const feedData = getFeedData(params.collateral.chainId as ChainsWithChainLinkFeedSupport, params.collateral.address, params.credit.address)
     if (!feedData) {
       // TODO should we throw an error here? probably yes?
-      return 
+      // TODO is this fine or we should use invariant or something?
+      throw new Error("We did not find a suitable price feed. Create classic elastic proposal instead.")
     }
 
-    const minCreditAmount = (BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(100);
+    // TODO what to do with padding of minCreditAmountPercentage - what is the final value being used?
+
+    const minCreditAmount = (BigInt(params.minCreditAmountPercentage * 1000) * params.creditAmount) / BigInt(100);
 
     // Get common proposal fields
     const commonFields = await getLendingCommonProposalFields(

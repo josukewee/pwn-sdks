@@ -45,11 +45,14 @@ describe("Test make proposal", () => {
 
 	it("should assemble elastic proposal", async () => {
 		const contractMock = {
-			createProposal: vi.fn().mockImplementation((p) => p),
-			getProposerSpec: vi
-				.fn()
-				.mockImplementation(() => Promise.resolve(proposerSpecHash)),
+			createProposal: vi.fn().mockImplementation((p) => p)
 		};
+
+		const loanContractMock = {
+			getProposerSpec: vi
+			.fn()
+			.mockImplementation(() => Promise.resolve(proposerSpecHash)),
+		}
 
 		const proposal = await makeProposal<ProposalType.Elastic>(
 			ProposalType.Elastic,
@@ -84,12 +87,13 @@ describe("Test make proposal", () => {
 				},
 				// TODO is this fine?
 				contract: contractMock,
+				loanContract: loanContractMock,
 			},
 		);
 
 		expect(contractMock.createProposal).toHaveBeenCalled();
-		expect(contractMock.getProposerSpec).toHaveBeenCalled();
-		expect(contractMock.getProposerSpec).toHaveBeenCalledWith(
+		expect(loanContractMock.getProposerSpec).toHaveBeenCalled();
+		expect(loanContractMock.getProposerSpec).toHaveBeenCalledWith(
 			{
 				sourceOfFunds: user_address,
 			},
@@ -128,10 +132,13 @@ describe("Test make proposal", () => {
 	it("should assemble elastic chainlink proposal", async () => {
 		const contractMock = {
 			createProposal: vi.fn().mockImplementation((p) => p),
-			getProposerSpec: vi
-				.fn()
-				.mockImplementation(() => Promise.resolve(proposerSpecHash)),
 		};
+
+		const loanContractMock = {
+			getProposerSpec: vi
+			.fn()
+			.mockImplementation(() => Promise.resolve(proposerSpecHash)),
+		}
 
 		const proposal = await makeProposal<ProposalType.ChainLink>(
 			ProposalType.ChainLink,
@@ -165,12 +172,13 @@ describe("Test make proposal", () => {
 				},
 				// TODO is this fine?
 				contract: contractMock,
+				loanContract: loanContractMock,
 			},
 		);
 
 		expect(contractMock.createProposal).toHaveBeenCalled();
-		expect(contractMock.getProposerSpec).toHaveBeenCalled();
-		expect(contractMock.getProposerSpec).toHaveBeenCalledWith(
+		expect(loanContractMock.getProposerSpec).toHaveBeenCalled();
+		expect(loanContractMock.getProposerSpec).toHaveBeenCalledWith(
 			{
 				sourceOfFunds: user_address,
 			},
@@ -183,6 +191,8 @@ describe("Test make proposal", () => {
 			// TODO what to do here?
 			throw new Error("Proposal is not a ChainLinkProposal");
 		}
+
+		// TODO test other cases of getFeedData input combinations
 
 		// TODO should we have here
 		expect(proposal.feedIntermediaryDenominations).toHaveLength(2)
