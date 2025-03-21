@@ -17,6 +17,7 @@ import {
 	getLendingCommonProposalFields,
 } from "./helpers.js";
 import type { BaseTerm, IServerAPI } from "./types.js";
+import { MIN_CREDIT_CALCULATION_DENOMINATOR } from "./constants.js";
 
 export interface IProposalChainLinkContract extends IProposalContract {
 	getProposalHash(proposal: ChainLinkProposal): Promise<Hex>;
@@ -135,8 +136,9 @@ export class ChainLinkProposalStrategy
 					},
 					ltv: this.term.ltv,
 					expirationDays: this.term.expirationDays,
-					minCreditAmountPercentage: this.term.minCreditAmountPercentage / 1000,
+					minCreditAmountPercentage: this.term.minCreditAmountPercentage / MIN_CREDIT_CALCULATION_DENOMINATOR,
 					relatedStrategyId: this.term.id,
+					isOffer: this.term.isOffer
 				});
 			}
 		}
@@ -202,6 +204,8 @@ export const createChainLinkElasticProposal = async (
 		ltv: params.ltv,
 		expirationDays: params.expirationDays,
 		minCreditAmountPercentage: params.minCreditAmountPercentage,
+		isOffer: params.isOffer,
+		relatedStrategyId: params.relatedStrategyId
 	};
 
 	const strategy = new ChainLinkProposalStrategy(

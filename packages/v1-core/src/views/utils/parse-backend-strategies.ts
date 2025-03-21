@@ -5,6 +5,7 @@ import type {
 import { ERC20Token } from "@pwndao/sdk-core";
 import invariant from "ts-invariant";
 import type { Strategy, StrategyTerm } from "../../models/strategies/types.js";
+import { MIN_CREDIT_CALCULATION_DENOMINATOR } from "../../factories/constants.js";
 
 type AssetModel = CollateralAssetInThesisSchemaWorkaround;
 type CreditAssetModel = Omit<AssetModel, "ltv" | "apr" | "allocationPercentage">;
@@ -61,7 +62,7 @@ export const parseBackendStrategiesResponse = (
 			backendData.collateralAssets?.map(parseStrategyToken) || [],
 		durationDays: backendData.loanDurationDays,
 		expirationDays: backendData.proposalExpirationDays,
-		minCreditAmountPercentage: backendData.minAllowedBorrowPercentage * 1000,
+		minCreditAmountPercentage: backendData.minAllowedBorrowPercentage * MIN_CREDIT_CALCULATION_DENOMINATOR,
 		id: backendData.id,
 	};
 
