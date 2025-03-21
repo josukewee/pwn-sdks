@@ -10,9 +10,10 @@ import type {
 import { calculateCreditPerCollateralUnit } from "../utils/calculations.js";
 import {
 	getLendingCommonProposalFields,
+	type ILoanContract,
 } from "./helpers.js";
 import type { BaseTerm, IServerAPI } from "./types.js";
-import { IProposalElasticContract } from "src/contracts/elastic-proposal-contract.js";
+import type { IProposalElasticContract } from "src/contracts/elastic-proposal-contract.js";
 
 export type CreateElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
@@ -32,6 +33,7 @@ export class ElasticProposalStrategy
 		public term: StrategyTerm,
 		public api: IProposalElasticAPIDeps,
 		public contract: IProposalElasticContract,
+		public loanContract: ILoanContract,
 	) {}
 
 	async implementElasticProposal(
@@ -94,6 +96,7 @@ export class ElasticProposalStrategy
 			},
 			{
 				contract: contract,
+				loanContract: this.loanContract,
 			},
 		);
 
@@ -205,6 +208,7 @@ export class ElasticProposalStrategy
 export type ElasticProposalDeps = {
 	api: IProposalElasticAPIDeps;
 	contract: IProposalElasticContract;
+	loanContract: ILoanContract;
 };
 
 /**
@@ -232,6 +236,7 @@ export const createElasticProposal = async (
 		dummyTerm,
 		deps.api,
 		deps.contract,
+		deps.loanContract,
 	);
 	const proposals = await strategy.createLendingProposals(
 		params.user,
@@ -280,6 +285,7 @@ export const createElasticProposalBatch = async (
 		dummyTerm,
 		deps.api,
 		deps.contract,
+		deps.loanContract,
 	);
 	const proposals = await strategy.createLendingProposals(
 		params.terms.user,

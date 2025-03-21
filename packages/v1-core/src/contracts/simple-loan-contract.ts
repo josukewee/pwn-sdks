@@ -1,8 +1,8 @@
-import { getPwnSimpleLoanAddress, Hex, SupportedChain } from "@pwndao/sdk-core";
-import { Config } from "@wagmi/core";
-import { ILoanContract } from "src/factories/helpers.js";
+import { getPwnSimpleLoanAddress, type Hex, type SupportedChain } from "@pwndao/sdk-core";
+import type { Config } from "@wagmi/core";
+import type { ILoanContract } from "src/factories/helpers.js";
 import { readPwnSimpleLoanGetLenderSpecHash } from "src/generated.js";
-import { ILenderSpec } from "src/models/terms.js";
+import type { ILenderSpec } from "src/models/terms.js";
 
 export class SimpleLoanContract implements ILoanContract {
 	constructor(private readonly config: Config) {}

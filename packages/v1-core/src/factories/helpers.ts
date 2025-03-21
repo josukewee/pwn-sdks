@@ -16,8 +16,9 @@ import type {
 } from "../models/strategies/types.js";
 import type { Proposal } from "../models/strategies/types.js";
 import type { ILenderSpec } from "../models/terms.js";
-import type { IProposalChainLinkContract } from "./create-chain-link-proposal.js";
-import type { IProposalElasticContract } from "./create-elastic-proposal.js";
+import type { IProposalChainLinkContract } from "../contracts/chain-link-proposal-contract.js";
+import type { IProposalElasticContract } from "../contracts/elastic-proposal-contract.js";
+import type { IServerAPI } from "../factories/types.js";
 
 type CommonProposalFieldsParams = {
 	user: UserWithNonceManager;
@@ -36,7 +37,7 @@ export interface ILoanContract {
 }
 
 export interface IProposalContract {
-	createProposal(params: Proposal): Promise<ProposalWithSignature>;
+	createProposal(params: Proposal, deps: { persistProposal: IServerAPI["post"]["persistProposal"] }): Promise<ProposalWithSignature>;
 	getProposalHash(proposal: Proposal): Promise<Hex>;
 	createMultiProposal(
 		proposals: ProposalWithHash[],
@@ -51,6 +52,7 @@ export const getLendingCommonProposalFields = async (
 	params: CommonProposalFieldsParams & IProposalMisc,
 	deps: {
 		contract: ProposalContract;
+		loanContract: ILoanContract
 	},
 ): Promise<ICommonProposalFields> => {
 	const {
@@ -66,7 +68,7 @@ export const getLendingCommonProposalFields = async (
 		relatedStrategyId,
 	} = params;
 
-	const proposerSpecHash = await deps.contract.getProposerSpec(
+	const proposerSpecHash = await deps.loanContract.getProposerSpec(
 		{
 			sourceOfFunds: user.address,
 		},

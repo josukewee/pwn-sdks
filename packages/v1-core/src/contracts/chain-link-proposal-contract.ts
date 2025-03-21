@@ -7,18 +7,18 @@ import { type Config, signTypedData } from "@wagmi/core";
 import type { Hex } from "viem";
 import {
 	ChainLinkProposal,
-	IProposalContract,
+	type IProposalContract,
 	type ProposalWithHash,
 	type ProposalWithSignature,
 	readPwnSimpleLoanElasticChainlinkProposalGetCollateralAmount,
 	readPwnSimpleLoanElasticChainlinkProposalGetProposalHash,
-	writePwnSimpleLoanElasticChainlinkProposalMakeProposal,
 } from "../index.js";
+import type { IServerAPI } from "../factories/types.js";
 
 export interface IProposalChainLinkContract extends IProposalContract {
 	getProposalHash(proposal: ChainLinkProposal): Promise<Hex>;
 	getCollateralAmount(proposal: ChainLinkProposal): Promise<bigint>;
-	createProposal(proposal: ChainLinkProposal): Promise<ProposalWithSignature>;
+	createProposal(proposal: ChainLinkProposal, deps: { persistProposal: IServerAPI["post"]["persistProposal"] }): Promise<ProposalWithSignature>;
 	createMultiProposal(proposals: ProposalWithHash[]): Promise<ProposalWithSignature[]>;
   }
 
@@ -38,23 +38,54 @@ export class ChainLinkProposalContract implements IProposalChainLinkContract {
 		return data as Hex;
 	}
 
+	async signProposal(proposal: ChainLinkProposal): Promise<ProposalWithSignature> {
+		const domain = {
+			name: 'PWNSimpleLoanElasticChainlinkProposal',
+			version: '1.0',
+			chainId: proposal.chainId,
+			verifyingContract: getChainLinkProposalContractAddress(proposal.chainId),
+		  }
+
+		const signature = await signTypedData(this.config, {
+      		domain,
+			types: ChainLinkProposal.ERC712_TYPES,
+      		primaryType: 'Proposal',
+      		message: proposal.createProposalStruct(),
+		})
+
+		// TODO is this correct?
+		return Object.assign(proposal, {
+			signature,
+			// TODO do we need hash?
+			hash: ZERO_ADDRESS, // todo: compute hash here
+			isOnChain: false,
+		}) as ProposalWithSignature;
+	}
+
 	async createProposal(
 		proposal: ChainLinkProposal,
+		deps: {
+			persistProposal: IServerAPI["post"]["persistProposal"];
+		}
 	): Promise<ProposalWithSignature> {
-		const data = await writePwnSimpleLoanElasticChainlinkProposalMakeProposal(
-			this.config,
-			{
-				address: getChainLinkProposalContractAddress(proposal.chainId),
-				chainId: proposal.chainId,
-				args: [proposal.createProposalStruct()],
-			},
-		);
+		// const data = await writePwnSimpleLoanElasticChainlinkProposalMakeProposal(
+		// 	this.config,
+		// 	{
+		// 		address: getChainLinkProposalContractAddress(proposal.chainId),
+		// 		chainId: proposal.chainId,
+		// 		args: [proposal.createProposalStruct()],
+		// 	},
+		// );
 
-		return Object.assign(proposal, {
-			signature: data,
-			hash: ZERO_ADDRESS, // todo: compute hash here
-			isOnChain: true,
-		}) as ProposalWithSignature;
+		// return Object.assign(proposal, {
+		// 	signature: data,
+		// 	hash: ZERO_ADDRESS, // todo: compute hash here
+		// 	isOnChain: true,
+		// }) as ProposalWithSignature;
+
+		const signedProposal = await this.signProposal(proposal);
+		await deps.persistProposal(signedProposal);
+		return signedProposal
 	}
 
 	// TODO: this is exactly same function as in elastic-proposal-contract

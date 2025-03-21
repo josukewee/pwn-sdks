@@ -6,6 +6,7 @@ import type {
 } from '../models/strategies/types.js';
 import {
   getLendingCommonProposalFields,
+  type ILoanContract,
 } from './helpers.js';
 import type {
   Hex,
@@ -15,8 +16,8 @@ import type {
 } from '@pwndao/sdk-core';
 import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
 import { getLoanContractAddress } from '@pwndao/sdk-core';
-import { ChainsWithChainLinkFeedSupport, convertNameIntoDenominator, FEED_REGISTRY, isExistBasePair } from '../constants.js';
-import { IProposalChainLinkContract } from 'src/contracts/chain-link-proposal-contract.js';
+import { type ChainsWithChainLinkFeedSupport, convertNameIntoDenominator, FEED_REGISTRY, isExistBasePair } from '../constants.js';
+import type { IProposalChainLinkContract } from 'src/contracts/chain-link-proposal-contract.js';
 
 export const getFeedData = (
   chainId: ChainsWithChainLinkFeedSupport, 
@@ -70,7 +71,8 @@ export class ChainLinkProposalStrategy
 {
   constructor(
     public term: StrategyTerm ,
-    public contract: IProposalChainLinkContract
+    public contract: IProposalChainLinkContract,
+    public loanContract: ILoanContract,
   ) {}
 
   async implementChainLinkProposal(
@@ -121,6 +123,7 @@ export class ChainLinkProposalStrategy
       },
       {
         contract: contract,
+        loanContract: this.loanContract,
       }
     );
 
@@ -186,7 +189,7 @@ export class ChainLinkProposalStrategy
           // Use the shared implementation directly
           return await this.implementChainLinkProposal(
             params,
-            this.contract
+            this.contract,
           );
         } catch (error) {
           console.error('Error creating ChainLink proposal:', error);
@@ -216,6 +219,7 @@ export interface IProposalChainLinkAPIDeps {
 export type ChainLinkElasticProposalDeps = {
   api: IProposalChainLinkAPIDeps
   contract: IProposalChainLinkContract;
+  loanContract: ILoanContract;
 }
 
 export const createChainLinkElasticProposal = async (
@@ -235,7 +239,8 @@ export const createChainLinkElasticProposal = async (
 
   const strategy = new ChainLinkProposalStrategy(
     dummyTerm,
-    deps.contract as IProposalChainLinkContract
+    deps.contract as IProposalChainLinkContract,
+    deps.loanContract,
   );
   const proposals = await strategy.createLendingProposals(
     params.user,
@@ -283,7 +288,8 @@ export const createChainLinkElasticProposalBatch = async (
   // Create a strategy and generate all proposals
   const strategy = new ChainLinkProposalStrategy(
     dummyTerm,
-    deps.contract
+    deps.contract,
+    deps.loanContract,
   );
   const proposals = await strategy.createLendingProposals(
     params.terms.user,
