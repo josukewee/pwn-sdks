@@ -37,11 +37,10 @@ export const calculateCollateralAmountFungibleProposal = ({
 	  .div(creditPerCollateralUnitBigInt)
 	  .toFixed(0)
   
-	if (returnBigInt) {
+	if (returnBigInt)
 	  return BigInt(maxPossibleCollateralAmountBigInt.toString())
-	} else {
-	  return formatUnits(BigInt(maxPossibleCollateralAmountBigInt.toString()), collateralDecimals)
-	}
+
+	return formatUnits(BigInt(maxPossibleCollateralAmountBigInt.toString()), collateralDecimals)
   }
 
 export const calculateCollateralBasedOnLtv = (
