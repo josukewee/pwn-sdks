@@ -1,3 +1,4 @@
+import { formatUnits } from "viem";
 import { CREDIT_PER_COLLATERAL_UNIT_DENOMINATOR } from "../constants.js";
 import { Decimal } from "decimal.js";
 
@@ -6,11 +7,42 @@ export const calculateCreditAmount = (
 	collateralAmount: bigint,
 	creditPerCollateralUnit: bigint,
 ): bigint => {
-	return (
-		(collateralAmount * creditPerCollateralUnit) /
-		BigInt(CREDIT_PER_COLLATERAL_UNIT_DENOMINATOR)
-	);
+	const collateral = new Decimal(collateralAmount.toString());
+	const denominator = new Decimal(CREDIT_PER_COLLATERAL_UNIT_DENOMINATOR);
+	const ratio = new Decimal(creditPerCollateralUnit.toString())
+	return BigInt(collateral.mul(ratio).div(denominator).toFixed(0))
 };
+
+export const calculateCollateralAmountFungibleProposal = ({
+	creditPerCollateralUnit,
+	collateralDecimals,
+	availableCreditLimit,
+	returnBigInt,
+  }: {
+	creditPerCollateralUnit: string;
+	collateralDecimals: number;
+	availableCreditLimit: string;
+	returnBigInt: boolean;
+  }) => {
+	const availableCreditLimitBigInt = new Decimal(availableCreditLimit || 0)
+	const creditPerCollateralUnitBigInt = new Decimal(creditPerCollateralUnit || 0)
+  
+	if (availableCreditLimitBigInt.isZero() || creditPerCollateralUnitBigInt.isZero()) {
+	  return returnBigInt ? BigInt(0) : '0'
+	}
+  
+	// Use ceil() to avoid rounding down which could lead to insufficient collateral
+	const maxPossibleCollateralAmountBigInt = availableCreditLimitBigInt
+	  .times(new Decimal(CREDIT_PER_COLLATERAL_UNIT_DENOMINATOR))
+	  .div(creditPerCollateralUnitBigInt)
+	  .toFixed(0)
+  
+	if (returnBigInt) {
+	  return BigInt(maxPossibleCollateralAmountBigInt.toString())
+	} else {
+	  return formatUnits(BigInt(maxPossibleCollateralAmountBigInt.toString()), collateralDecimals)
+	}
+  }
 
 export const calculateCollateralBasedOnLtv = (
 	creditAmount: bigint,
