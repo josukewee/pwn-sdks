@@ -273,6 +273,7 @@ export default function StrategyDetailPage() {
 							<CardTitle>Proposals</CardTitle>
 							<CardDescription>
 								List of proposals for this strategy
+
 							</CardDescription>
 						</CardHeader>
 						<CardContent>

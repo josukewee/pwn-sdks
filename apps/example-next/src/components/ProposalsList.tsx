@@ -1,5 +1,6 @@
 "use client";
 import { useStrategyProposals } from "@pwndao/sdk-v1-react";
+import { RevokeProposals } from "./RevokeProposals";
 
 export default function ProposalsList({
 	strategyId,
@@ -13,6 +14,8 @@ export default function ProposalsList({
 			<h1 className="text-3xl font-bold text-gray-800 mb-6 border-b pb-3">
 				Proposals List
 			</h1>
+
+			<RevokeProposals proposalsWithSignatures={proposals ?? []} />
 
 			{isLoading ? (
 				<div className="flex justify-center py-8">
