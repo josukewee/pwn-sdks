@@ -16,7 +16,7 @@ import type {
 } from '@pwndao/sdk-core';
 import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
 import { getLoanContractAddress } from '@pwndao/sdk-core';
-import { type ChainsWithChainLinkFeedSupport, convertNameIntoDenominator, FEED_REGISTRY, isExistBasePair } from '../constants.js';
+import { type ChainsWithChainLinkFeedSupport, convertNameIntoDenominator, EXISTING_QUOTE_PAIRS, FEED_REGISTRY, isExistBasePair, WETH } from '../constants.js';
 import type { IProposalChainLinkContract } from 'src/contracts/chain-link-proposal-contract.js';
 
 export const getFeedData = (
@@ -24,18 +24,41 @@ export const getFeedData = (
   base: AddressString, // collateral asset
   quote: AddressString, // credit asset
 ): { feedIntermediaryDenominations: AddressString[], feedInvertFlags: boolean[] } | null => {
-  const baseFeeds = FEED_REGISTRY?.[chainId]?.[base]
-  const quoteFeeds = FEED_REGISTRY?.[chainId]?.[quote]
-
-  if (!baseFeeds?.length || !quoteFeeds?.length) {
+  if (base === quote) {
     return null
   }
 
-  // e.g. base ==   solvBTC ==> ["BTC"]
-  // e.g. quote ==  USD0    ==> ["USD"]
+  const baseFeeds = FEED_REGISTRY?.[chainId]?.[base]
+  const quoteFeeds = FEED_REGISTRY?.[chainId]?.[quote]
 
-  // Check for direct route first (1-hop)
-  // @ts-expect-error not sure why this is not working
+  if ((!baseFeeds?.length && base !== WETH[chainId]) || (!quoteFeeds?.length && quote !== WETH[chainId])) {
+    return null
+  }
+
+  // check for 0 hop route if it's weth
+  if (base === WETH[chainId]) {
+    // we checking if exists ETH feed for quote
+    const isExistDirectEthFeed = quoteFeeds.some(feed => feed === 'ETH')
+    if (isExistDirectEthFeed) {
+      if (isExistDirectEthFeed) {
+        return {
+          feedIntermediaryDenominations: [],
+          feedInvertFlags: [false],
+        }
+      }
+    }
+  } else if (quote === WETH[chainId]) {
+    // we checking if exists ETH feed for base
+    const isExistDirectEthFeed = baseFeeds.some(feed => feed === 'ETH')
+    if (isExistDirectEthFeed) {
+      return {
+        feedIntermediaryDenominations: [],
+        feedInvertFlags: [true],
+      }
+    }
+  }
+
+  // Check for direct route (1-hop)
   const commonFeed = baseFeeds.find(_baseFeed => quoteFeeds.includes(_baseFeed))
   if (commonFeed) {
     return {

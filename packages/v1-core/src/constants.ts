@@ -92,6 +92,12 @@ export const USDe = {
     [SupportedChain.Base]: "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34"
 }
 
+export const WETH = {
+    [SupportedChain.Ethereum]: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+    [SupportedChain.Base]: "0x4200000000000000000000000000000000000006",
+    [SupportedChain.Sepolia]: "0x7b79995e5f793a07bc00c21412e50ecae098e7f9"
+}
+
 export const sUSDe = {
     [SupportedChain.Ethereum]: "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
     [SupportedChain.Base]: "0x211cc4dd073734da055fbf44a2b4667d5e5fe5d2"
@@ -118,7 +124,7 @@ export const cbBTC = {
     [SupportedChain.Base]: "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf"
 }
 
-const EXISTING_QUOTE_PAIRS = {
+export const EXISTING_QUOTE_PAIRS = {
     [SupportedChain.Ethereum]: ["BTC/USD", "ETH/USD", "ETH/BTC", "BTC/ETH"],
     [SupportedChain.Base]: ["BTC/USD", "ETH/USD", "EUR/USD"],
     [SupportedChain.Sepolia]: ['BTC/USD', 'BTC/ETH']
@@ -137,7 +143,7 @@ export const isExistBasePair = (chainId: ChainsWithChainLinkFeedSupport, base: A
         // TODO should we throw 
         return undefined
     }
-    
+
     const exactMatch = EXISTING_QUOTE_PAIRS[chainId].find(pair => pair === `${base}/${quote}`)
     if (exactMatch) {
         return {
@@ -183,7 +189,7 @@ export const FEED_REGISTRY = {
         [rsETH[SupportedChain.Ethereum]]: ["ETH"],
         [weETH[SupportedChain.Ethereum]]: ["ETH"],
         [DAI[SupportedChain.Ethereum]]: ["ETH", "USD"],
-        [TUSD[SupportedChain.Ethereum]]: ["ETH"],
+        [TUSD[SupportedChain.Ethereum]]: ["USD", "ETH"],
         [USDC[SupportedChain.Ethereum]]: ["ETH", "USD"],
         [USDT[SupportedChain.Ethereum]]: ["ETH", "USD"],
         [tBTC[SupportedChain.Ethereum]]: ["USD"],
@@ -193,7 +199,8 @@ export const FEED_REGISTRY = {
         [USDe[SupportedChain.Ethereum]]: ["USD"],
         [sUSDe[SupportedChain.Ethereum]]: ["USD"],
         [PYUSD[SupportedChain.Ethereum]]: ["USD"],
-        [TUSD[SupportedChain.Ethereum]]: ["USD"],
+        // TODO is this fine?
+        [WETH[SupportedChain.Ethereum]]: ["BTC", "USD", "ETH"],
     },
     [SupportedChain.Base]: {
         [LBTC[SupportedChain.Base]]: ["BTC"],
@@ -213,11 +220,15 @@ export const FEED_REGISTRY = {
         [USDe[SupportedChain.Base]]: ["USD"],
         [WBTC[SupportedChain.Base]]: ["USD"],
         [cbBTC[SupportedChain.Base]]: ["USD"],
-        [sUSDe[SupportedChain.Base]]: ["USD"]
+        [sUSDe[SupportedChain.Base]]: ["USD"],
+        // TODO is this fine?
+        [WETH[SupportedChain.Base]]: ["USD", "ETH"]
     },
     [SupportedChain.Sepolia]: {
         [DAI[SupportedChain.Sepolia]]: ["USD"],
-        [USDC[SupportedChain.Sepolia]]: ["USD"]
+        [USDC[SupportedChain.Sepolia]]: ["USD"],
+        // TODO is this fine?
+        [WETH[SupportedChain.Sepolia]]: ["ETH", "BTC"]
     }
 } as const satisfies FeedRegistryType
 

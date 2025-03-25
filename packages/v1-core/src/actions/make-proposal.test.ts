@@ -198,7 +198,6 @@ describe("Test make proposal", () => {
 		expect(proposal.feedIntermediaryDenominations).toHaveLength(2)
 		expect(proposal.feedInvertFlags).toHaveLength(3)
 
-		// TODO should here be the convertNameIntoDenominator or not?
 		expect(proposal.feedIntermediaryDenominations[0]).toBe(convertNameIntoDenominator("USD"))
 		expect(proposal.feedIntermediaryDenominations[1]).toBe(convertNameIntoDenominator("BTC"))
 
