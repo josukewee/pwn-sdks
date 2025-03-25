@@ -35,7 +35,7 @@ jobs:
       - run: bun install
       - uses: nrwl/nx-set-shas@v4
 
-      - run: bunx nx affected -t biome-lint test build --parallel=1 --verbose
+      - run: bunx nx affected -t biome-lint test build --parallel --verbose
 
   publish:
     name: Publish All Packages
@@ -70,7 +70,7 @@ jobs:
 
       - name: Build All Packages
         id: build
-        run: bunx nx run-many -t build --exclude=/apps
+        run: bunx nx run-many -t build --parallel --exclude=/apps
         shell: bash
 
       - name: Publish All Packages
