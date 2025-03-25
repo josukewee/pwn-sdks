@@ -12,6 +12,9 @@ export class NFT extends BaseAsset {
 		name?: string,
 		symbol?: string,
 	) {
+		if (decimals < 0) {
+			throw new Error("NFT decimals cannot be negative");
+		}
 		super(chainId, address, decimals, false, NFT.category, name, symbol);
 	}
 }
@@ -27,6 +30,9 @@ export class FungibleNFT extends BaseAsset {
 		name?: string,
 		symbol?: string,
 	) {
+		if (decimals < 0) {
+			throw new Error("FungibleNFT decimals cannot be negative");
+		}
 		super(
 			chainId,
 			address,
