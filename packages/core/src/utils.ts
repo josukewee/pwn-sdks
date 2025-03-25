@@ -2,7 +2,7 @@ import { CHAIN_TO_ADDRESSES_MAP } from "./addresses.js";
 import { SupportedChain } from "./chains.js";
 
 export const getLoanContractAddress = (chainId: SupportedChain) => {
-	return CHAIN_TO_ADDRESSES_MAP[chainId].pwnLoan;
+	return CHAIN_TO_ADDRESSES_MAP[chainId].pwnSimpleLoan;
 };
 
 export const getPwnSimpleLoanAddress = (

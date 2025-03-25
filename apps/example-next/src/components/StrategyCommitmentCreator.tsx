@@ -85,6 +85,8 @@ export default function StrategyCommitmentCreator({
 					}),
 					minCreditAmountPercentage:
 						strategy.terms.minCreditAmountPercentage,
+					isOffer: true,
+					relatedStrategyId: strategy.terms.relatedStrategyId
 				},
 				collateralAssets: strategy.terms.collateralAssets,
 				creditAssets: strategy.terms.creditAssets,

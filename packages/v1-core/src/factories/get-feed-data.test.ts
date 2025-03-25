@@ -1,18 +1,19 @@
 import { getFeedData } from './create-chain-link-proposal.js';
 import { SupportedChain, type AddressString, generateAddress } from '@pwndao/sdk-core';
-import { AllowedDenominatorsEnum, FEED_REGISTRY, WETH, convertNameIntoDenominator, ezETH, stETH, tBTC, weETH } from '../constants.js';
+import { type AllowedDenominatorsEnum, ChainsWithChainLinkFeedSupport, FEED_REGISTRY, WETH, convertNameIntoDenominator, ezETH, stETH, tBTC, weETH } from '../constants.js';
 import { LBTC, PYUSD, USDC, DAI, WBTC, USDT } from '../constants.js';
 
 describe('getFeedData', () => {
   const testFeedData = (
     _name: string,
+    chainId: SupportedChain,
     collateral: string,
     credit: string,
     expectedDenominations: string[],
     expectedInvertFlags: boolean[]
   ) => {
     const result = getFeedData(
-      SupportedChain.Ethereum,
+      chainId as ChainsWithChainLinkFeedSupport,
       collateral as AddressString,
       credit as AddressString
     );
@@ -36,6 +37,7 @@ describe('getFeedData', () => {
     it.each([
       [
         'USDC->ETH==WETH',
+        SupportedChain.Ethereum,
         WETH[SupportedChain.Ethereum],
         USDC[SupportedChain.Ethereum],
         [],
@@ -43,6 +45,7 @@ describe('getFeedData', () => {
       ],
       [
         'WETH==ETH->USDC',
+        SupportedChain.Ethereum,
         USDC[SupportedChain.Ethereum],
         WETH[SupportedChain.Ethereum],
         [],
@@ -55,6 +58,7 @@ describe('getFeedData', () => {
     it.each([
       [
         'DAI->ETH->weETH',
+        SupportedChain.Ethereum,
         weETH[SupportedChain.Ethereum],
         DAI[SupportedChain.Ethereum],
         ['ETH'],
@@ -63,6 +67,7 @@ describe('getFeedData', () => {
 
       [
         'tBTC->USD->ETH==WETH',
+        SupportedChain.Ethereum,
         WETH[SupportedChain.Ethereum],
         tBTC[SupportedChain.Ethereum],
         ['USD'],
@@ -70,6 +75,7 @@ describe('getFeedData', () => {
       ],
       [
         'WETH==ETH->USD->tBTC',
+        SupportedChain.Ethereum,
         tBTC[SupportedChain.Ethereum],
         WETH[SupportedChain.Ethereum],
         ['USD'],
@@ -77,6 +83,7 @@ describe('getFeedData', () => {
       ],
       [
         'WBTC->BTC->WETH==ETH',
+        SupportedChain.Ethereum,
         WETH[SupportedChain.Ethereum],
         WBTC[SupportedChain.Ethereum],
         ['BTC'],
@@ -84,6 +91,7 @@ describe('getFeedData', () => {
       ],
       [
         'PYUSD->USD->WETH==ETH',
+        SupportedChain.Ethereum,
         WETH[SupportedChain.Ethereum],
         PYUSD[SupportedChain.Ethereum],
         ['USD'],
@@ -91,6 +99,7 @@ describe('getFeedData', () => {
       ],
       [
         'USDC->ETH->stETH',
+        SupportedChain.Ethereum,
         stETH[SupportedChain.Ethereum],
         USDC[SupportedChain.Ethereum],
         ['ETH'],
@@ -103,6 +112,7 @@ describe('getFeedData', () => {
     it.each([
       [
         'PYUSD->USD->BTC->LBTC',
+        SupportedChain.Ethereum,
         LBTC[SupportedChain.Ethereum],
         PYUSD[SupportedChain.Ethereum],
         ['USD', 'BTC'],
@@ -110,6 +120,7 @@ describe('getFeedData', () => {
       ],
       [
         'LBTC->BTC->ETH->stETH',
+        SupportedChain.Ethereum,
         stETH[SupportedChain.Ethereum],
         LBTC[SupportedChain.Ethereum],
         ['BTC', 'ETH'],
@@ -117,6 +128,7 @@ describe('getFeedData', () => {
       ],
       [
         'LBTC->BTC->ETH->USDC',
+        SupportedChain.Ethereum,
         USDC[SupportedChain.Ethereum],
         LBTC[SupportedChain.Ethereum],
         ['BTC', 'ETH'],
@@ -124,6 +136,7 @@ describe('getFeedData', () => {
       ],
       [
         'WBTC->BTC->ETH->USDT',
+        SupportedChain.Ethereum,
         USDT[SupportedChain.Ethereum],
         WBTC[SupportedChain.Ethereum],
         ['BTC', 'ETH'],
@@ -131,9 +144,18 @@ describe('getFeedData', () => {
       ],
       [
         'USDT->ETH->BTC->WBTC',
+        SupportedChain.Ethereum,
         WBTC[SupportedChain.Ethereum],
         USDT[SupportedChain.Ethereum],
         ['ETH', 'BTC'],
+        [false, false, true]
+      ],
+      [
+        'LBTC->BTC->USD->ETH==WETH',
+        SupportedChain.Base,
+        WETH[SupportedChain.Base],
+        LBTC[SupportedChain.Base],
+        ['BTC', 'USD'],
         [false, false, true]
       ]
     ])('%s route', testFeedData)
@@ -143,35 +165,40 @@ describe('getFeedData', () => {
     it.each([
       [
         'same asset feeds',
+        SupportedChain.Ethereum,
         PYUSD[SupportedChain.Ethereum],
         PYUSD[SupportedChain.Ethereum]
       ],
       [
         'non-existent token',
+        SupportedChain.Ethereum,
         generateAddress(),
         PYUSD[SupportedChain.Ethereum]
       ],
       [
         'unsupported chain token',
-        LBTC[SupportedChain.Ethereum],
-        generateAddress()
+        SupportedChain.Ethereum,
+        generateAddress(),
+        PYUSD[SupportedChain.Ethereum]
       ],
       // TODO once we allow 3-hop routes OR eth/btc feed will appear on base,
       //  we should remove this test and instead check correct result
       [
         'too much hops than allowed',
-        WBTC[SupportedChain.Base],
-        ezETH[SupportedChain.Base],
+        SupportedChain.Base,
+        LBTC[SupportedChain.Base],
+        ezETH[SupportedChain.Base]
       ]
     ])(
       'should return null for %s',
       (
         _name,
+        chainId,
         collateral,
         credit
       ) => {
         const result = getFeedData(
-          SupportedChain.Ethereum,
+          chainId as ChainsWithChainLinkFeedSupport,
           collateral as AddressString,
           credit as AddressString
         );

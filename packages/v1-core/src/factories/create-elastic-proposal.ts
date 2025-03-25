@@ -14,9 +14,12 @@ import {
 } from "./helpers.js";
 import type { BaseTerm, IServerAPI } from "./types.js";
 import type { IProposalElasticContract } from "src/contracts/elastic-proposal-contract.js";
+import { LTV_DENOMINATOR, MIN_CREDIT_CALCULATION_DENOMINATOR } from "./constants.js";
 
 export type CreateElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
+	relatedStrategyId?: string;
+	isOffer: boolean;
 };
 
 export interface IProposalElasticAPIDeps {
@@ -63,7 +66,7 @@ export class ElasticProposalStrategy
 			(params.creditAmount * creditUsdPrice) /
 			BigInt(10 ** params.credit.decimals);
 		const minCreditAmountUsd =
-			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(100);
+			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(MIN_CREDIT_CALCULATION_DENOMINATOR);
 
 		const ltv =
 			typeof params.ltv === 'object' 
@@ -73,7 +76,7 @@ export class ElasticProposalStrategy
 				: params.ltv;
 
 		// Apply LTV ratio
-		const collateralAmountUsd = (creditAmountUsd * BigInt(10000)) / BigInt(ltv);
+		const collateralAmountUsd = (creditAmountUsd * BigInt(LTV_DENOMINATOR)) / BigInt(ltv);
 
 		// Convert back to collateral tokens
 		const collateralAmount =
@@ -92,7 +95,7 @@ export class ElasticProposalStrategy
 				apr: params.apr,
 				expiration,
 				loanContract: getLoanContractAddress(params.collateral.chainId),
-				relatedStrategyId: this.term.id,
+				relatedStrategyId: this.term.relatedStrategyId,
 			},
 			{
 				contract: contract,
@@ -113,6 +116,7 @@ export class ElasticProposalStrategy
 				minCreditAmount: minCreditAmountUsd,
 				availableCreditLimit: params.creditAmount,
 				chainId: params.collateral.chainId,
+				isOffer: params.isOffer
 			},
 			params.collateral.chainId,
 		);
@@ -149,7 +153,8 @@ export class ElasticProposalStrategy
 					ltv: this.term.ltv,
 					expirationDays: this.term.expirationDays,
 					minCreditAmountPercentage: this.term.minCreditAmountPercentage,
-					relatedStrategyId: this.term.id,
+					relatedStrategyId: this.term.relatedStrategyId,
+					isOffer: this.term.isOffer
 				});
 			}
 		}
@@ -230,6 +235,8 @@ export const createElasticProposal = async (
 		ltv: params.ltv,
 		expirationDays: params.expirationDays,
 		minCreditAmountPercentage: params.minCreditAmountPercentage,
+		relatedStrategyId: params.relatedStrategyId,
+		isOffer: params.isOffer
 	};
 
 	const strategy = new ElasticProposalStrategy(
@@ -252,6 +259,8 @@ export const createElasticProposal = async (
 export type CreateElasticProposalBatchParams = {
 	terms: Omit<BaseTerm, "collateral" | "credit"> & {
 		minCreditAmountPercentage: number;
+		relatedThesisId?: string;
+		isOffer: boolean;
 	};
 	collateralAssets: Token[];
 	creditAssets: Token[];
@@ -278,6 +287,8 @@ export const createElasticProposalBatch = async (
 		expirationDays: params.terms.expirationDays,
 		minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
 		id: "1",
+		relatedStrategyId: params.terms.relatedStrategyId,
+		isOffer: params.terms.isOffer
 	};
 
 	// Create a strategy and generate all proposals

@@ -15,9 +15,10 @@ import type {
   Token,
 } from '@pwndao/sdk-core';
 import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
-import { getLoanContractAddress } from '@pwndao/sdk-core';
-import { type ChainsWithChainLinkFeedSupport, convertNameIntoDenominator, EXISTING_QUOTE_PAIRS, FEED_REGISTRY, isExistBasePair, WETH } from '../constants.js';
+import { getLoanContractAddress, SupportedChain } from '@pwndao/sdk-core';
+import { type ChainsWithChainLinkFeedSupport, convertNameIntoDenominator, FEED_REGISTRY, isExistBasePair, WETH } from '../constants.js';
 import type { IProposalChainLinkContract } from 'src/contracts/chain-link-proposal-contract.js';
+import { MIN_CREDIT_CALCULATION_DENOMINATOR } from './constants.js';
 
 export const getFeedData = (
   chainId: ChainsWithChainLinkFeedSupport, 
@@ -58,8 +59,13 @@ export const getFeedData = (
     }
   }
 
+  console.log('here')
+
   // Check for direct route (1-hop)
   const commonFeed = baseFeeds.find(_baseFeed => quoteFeeds.includes(_baseFeed))
+  if (chainId === SupportedChain.Base) {
+    console.log('commonFeed', commonFeed)
+  }
   if (commonFeed) {
     return {
       feedIntermediaryDenominations: [convertNameIntoDenominator(commonFeed)],
@@ -73,6 +79,9 @@ export const getFeedData = (
     for (const baseFeed of baseFeeds) {
       // TODO is this correct or we also need to test some diifferent combination?
       const _isExistBasePair = isExistBasePair(chainId, quoteFeed, baseFeed)
+      console.log('isExistBasePair', _isExistBasePair)
+      console.log('quoteFeed', quoteFeed)
+      console.log('baseFeed', baseFeed)
       if (_isExistBasePair?.found) {
         // TODO check if does not match also non inverted to have the algo deterministic?
         return {
@@ -132,9 +141,8 @@ export class ChainLinkProposalStrategy
       throw new Error("We did not find a suitable price feed. Create classic elastic proposal instead.")
     }
 
-    // TODO what to do with padding of minCreditAmountPercentage - what is the final value being used?
-
-    const minCreditAmount = (BigInt(params.minCreditAmountPercentage * 1000) * params.creditAmount) / BigInt(100);
+		const minCreditAmount =
+			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(MIN_CREDIT_CALCULATION_DENOMINATOR);
 
     // Get common proposal fields
     const commonFields = await getLendingCommonProposalFields(
@@ -148,7 +156,7 @@ export class ChainLinkProposalStrategy
         apr: params.apr,
         expiration,
         loanContract: getLoanContractAddress(params.collateral.chainId),
-        relatedStrategyId: this.term.id,
+        relatedStrategyId: this.term.relatedStrategyId,
       },
       {
         contract: contract,
@@ -191,11 +199,12 @@ export class ChainLinkProposalStrategy
 					},
 					ltv: this.term.ltv,
 					expirationDays: this.term.expirationDays,
-					minCreditAmountPercentage: this.term.minCreditAmountPercentage / 1000,
+					minCreditAmountPercentage: this.term.minCreditAmountPercentage,
 					relatedStrategyId: this.term.id,
-        });
-      }
-    }
+					isOffer: this.term.isOffer,
+				});
+			}
+		}
 
     return result;
   }
@@ -264,6 +273,8 @@ export const createChainLinkElasticProposal = async (
 		ltv: params.ltv,
 		expirationDays: params.expirationDays,
 		minCreditAmountPercentage: params.minCreditAmountPercentage,
+		isOffer: params.isOffer,
+		relatedStrategyId: params.relatedStrategyId
 	};
 
   const strategy = new ChainLinkProposalStrategy(
@@ -312,6 +323,8 @@ export const createChainLinkElasticProposalBatch = async (
     // TODO is this correct? previously was here conversion to BigInt
     minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
     // id: '1',
+    isOffer: params.terms.isOffer,
+    relatedStrategyId: params.terms.relatedStrategyId
   };
 
   // Create a strategy and generate all proposals
