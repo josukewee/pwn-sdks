@@ -199,7 +199,8 @@ export const FEED_REGISTRY = {
         [USDe[SupportedChain.Ethereum]]: ["USD"],
         [sUSDe[SupportedChain.Ethereum]]: ["USD"],
         [PYUSD[SupportedChain.Ethereum]]: ["USD"],
-        // TODO is this fine?
+        // note: slight hack as WETH == ETH, so these are the same feeds
+        //  as for ETH in EXISTING_QUOTE_PAIRS
         [WETH[SupportedChain.Ethereum]]: ["BTC", "USD", "ETH"],
     },
     [SupportedChain.Base]: {
@@ -221,13 +222,15 @@ export const FEED_REGISTRY = {
         [WBTC[SupportedChain.Base]]: ["USD"],
         [cbBTC[SupportedChain.Base]]: ["USD"],
         [sUSDe[SupportedChain.Base]]: ["USD"],
-        // TODO is this fine?
+        // note: slight hack as WETH == ETH, so these are the same feeds
+        //  as for ETH in EXISTING_QUOTE_PAIRS
         [WETH[SupportedChain.Base]]: ["USD", "ETH"]
     },
     [SupportedChain.Sepolia]: {
         [DAI[SupportedChain.Sepolia]]: ["USD"],
         [USDC[SupportedChain.Sepolia]]: ["USD"],
-        // TODO is this fine?
+        // note: slight hack as WETH == ETH, so these are the same feeds
+        //  as for ETH in EXISTING_QUOTE_PAIRS
         [WETH[SupportedChain.Sepolia]]: ["ETH", "BTC"]
     }
 } as const satisfies FeedRegistryType

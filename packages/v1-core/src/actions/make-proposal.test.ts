@@ -82,12 +82,10 @@ describe("Test make proposal", () => {
 			{
 				api: {
 					getAssetUsdUnitPrice: async () => 1000000000000000000n,
-					// TODO is this fine?
 					persistProposal: vi.fn().mockImplementation((p) => p),
 					persistProposals: vi.fn().mockImplementation((p) => p),
 					updateNonces: vi.fn().mockImplementation((p) => p),
 				},
-				// TODO is this fine?
 				contract: contractMock,
 				loanContract: loanContractMock,
 			},
@@ -168,13 +166,11 @@ describe("Test make proposal", () => {
 				isOffer: true
 			},
 			{
-				// TODO is this fine?
 				api: {
 					persistProposal: vi.fn().mockImplementation((p) => p),
 					persistProposals: vi.fn().mockImplementation((p) => p),
 					updateNonces: vi.fn().mockImplementation((p) => p),
 				},
-				// TODO is this fine?
 				contract: contractMock,
 				loanContract: loanContractMock,
 			},
@@ -192,7 +188,6 @@ describe("Test make proposal", () => {
 		expect(proposal).toBeDefined();
 
 		if (!(proposal instanceof ChainLinkProposal)) {
-			// TODO what to do here?
 			throw new Error("Proposal is not a ChainLinkProposal");
 		}
 
