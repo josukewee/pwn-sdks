@@ -19,7 +19,10 @@ describe("useRevokeNonces", () => {
 			},
 			{
 				global: {
-					plugins: [VueQueryPlugin, [WagmiPlugin, { config: {} }]],
+					plugins: [
+						[VueQueryPlugin, { ssr: false }],
+						[WagmiPlugin, { config: {} }],
+					],
 				},
 			},
 		);
