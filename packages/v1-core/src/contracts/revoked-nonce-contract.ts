@@ -10,7 +10,6 @@ import invariant from "ts-invariant";
 import type { Address } from "viem";
 import {
 	pwnRevokedNonceAbi,
-	readPwnRevokedNonceIsNonceRevoked,
 	writePwnRevokedNonceRevokeNonces,
 } from "../generated.js";
 

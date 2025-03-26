@@ -1,4 +1,4 @@
-import type { SupportedChain } from "@pwndao/sdk-core";
+import type { AddressString, SupportedChain } from "@pwndao/sdk-core";
 import { RevokedNonceContract, revokeProposals } from "@pwndao/v1-core";
 import { useMutation } from "@tanstack/vue-query";
 import { useConfig } from "@wagmi/vue";
@@ -13,9 +13,13 @@ export const useRevokeNonces = () => {
         mutationFn: ({
             proposalNonces,
             chainId,
+            owner,
+            nonceSpace,
         }: {
             proposalNonces: bigint[];
             chainId: SupportedChain;
-        }) => revokeProposals(proposalNonces, chainId, contract.value),
+            owner: AddressString;
+            nonceSpace: bigint;
+        }) => revokeProposals(proposalNonces, chainId, owner, nonceSpace, contract.value),
     });
 }
