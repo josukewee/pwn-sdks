@@ -106,7 +106,7 @@ describe("Test make proposal", () => {
 		expect(proposal.collateralAddress).toBe(collateralAddress);
 		expect(proposal.creditAddress).toBe(creditAddress);
 		expect(proposal.availableCreditLimit).toBe(1n * 10n ** 18n);
-		expect(proposal.minCreditAmount).toBe(3n * 10n ** (18n - 3n)); // 3% of credit amount
+		expect(proposal.minCreditAmount).toBe(3n * 10n ** (18n - 2n)); // 3% of credit amount
 		expect(proposal.accruingInterestAPR).toBe(apr);
 		expect(proposal.durationOrDate).toBe(durationDays * 24 * 60 * 60);
 		// Verify expiration calculation: current timestamp + expirationDays * 24 * 60 * 60
