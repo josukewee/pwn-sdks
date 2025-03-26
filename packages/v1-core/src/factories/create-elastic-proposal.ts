@@ -14,7 +14,7 @@ import {
 } from "./helpers.js";
 import type { BaseTerm, IServerAPI } from "./types.js";
 import type { IProposalElasticContract } from "src/contracts/elastic-proposal-contract.js";
-import { LTV_DENOMINATOR, MIN_CREDIT_CALCULATION_DENOMINATOR } from "./constants.js";
+import { LTV_DENOMINATOR } from "./constants.js";
 
 export type CreateElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
@@ -66,7 +66,7 @@ export class ElasticProposalStrategy
 			(params.creditAmount * creditUsdPrice) /
 			BigInt(10 ** params.credit.decimals);
 		const minCreditAmountUsd =
-			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(MIN_CREDIT_CALCULATION_DENOMINATOR);
+			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(100);
 
 		const ltv =
 			typeof params.ltv === 'object' 

@@ -16,7 +16,6 @@ import type {
 import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
 import { getLoanContractAddress } from '@pwndao/sdk-core';
 import type { IProposalChainLinkContract } from 'src/contracts/chain-link-proposal-contract.js';
-import { MIN_CREDIT_CALCULATION_DENOMINATOR } from './constants.js';
 import { ChainsWithChainLinkFeedSupport, getFeedData } from '../utils/chainlink-feeds.js';
 
 export type CreateChainLinkElasticProposalParams = BaseTerm & {
@@ -63,7 +62,7 @@ export class ChainLinkProposalStrategy
     }
 
 		const minCreditAmount =
-			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(MIN_CREDIT_CALCULATION_DENOMINATOR);
+			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(100);
 
     // Get common proposal fields
     const commonFields = await getLendingCommonProposalFields(
