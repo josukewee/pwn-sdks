@@ -1,6 +1,6 @@
 import { AddressString } from "@pwndao/sdk-core"
 import { SupportedChain, typeSafeObjectKeys } from "@pwndao/sdk-core"
-import { DAI, PYUSD, sUSDe, USDe, tBTC, wstETH, USDT, USDC, TUSD, cbETH, weETH, rsETH, ezETH, LBTC, rETH, solvBTC, stETH, WBTC, cbBTC, USD0, WETH, EURc, GHO, USDS } from "src/addresses.js"
+import { DAI, PYUSD, sUSDe, USDe, tBTC, wstETH, USDT, USDC, TUSD, cbETH, weETH, rsETH, ezETH, LBTC, rETH, solvBTC, stETH, WBTC, cbBTC, USD0, WETH, EURc, GHO, USDS } from "../addresses.js"
 
 export const ENABLED_QUOTES = {
     [SupportedChain.Ethereum]: ['BTC', 'ETH', 'USD'] as const,

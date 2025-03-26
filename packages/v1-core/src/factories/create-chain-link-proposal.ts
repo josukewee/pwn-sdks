@@ -17,7 +17,7 @@ import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
 import { getLoanContractAddress } from '@pwndao/sdk-core';
 import type { IProposalChainLinkContract } from 'src/contracts/chain-link-proposal-contract.js';
 import { MIN_CREDIT_CALCULATION_DENOMINATOR } from './constants.js';
-import { ChainsWithChainLinkFeedSupport, getFeedData } from 'src/utils/chainlink-feeds.js';
+import { ChainsWithChainLinkFeedSupport, getFeedData } from '../utils/chainlink-feeds.js';
 
 export type CreateChainLinkElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
