@@ -112,7 +112,7 @@ export class ElasticProposalStrategy
 		return new ElasticProposal(
 			{
 				...commonFields,
-				creditPerCollateralUnit,
+				creditPerCollateralUnit: BigInt(creditPerCollateralUnit),
 				minCreditAmount: minCreditAmountUsd,
 				availableCreditLimit: params.creditAmount,
 				chainId: params.collateral.chainId,

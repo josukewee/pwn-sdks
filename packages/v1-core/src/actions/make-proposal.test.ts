@@ -13,8 +13,9 @@ import {
 } from "@pwndao/sdk-core";
 import { ProposalType } from "../models/proposals/proposal-base.js";
 import { makeProposal } from "./make-proposal.js";
-import { convertNameIntoDenominator, LBTC, PYUSD } from "../constants.js";
 import { ChainLinkProposal } from "../models/proposals/chainlink-proposal.js";
+import { convertNameIntoDenominator } from "../utils/chainlink-feeds.js";
+import { LBTC, PYUSD } from "../addresses.js";
 
 describe("Test make proposal", () => {
 	const collateralAddress = LBTC[SupportedChain.Ethereum] as AddressString

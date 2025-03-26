@@ -11,90 +11,13 @@ import {
 import type {
   Hex,
   UserWithNonceManager,
-  AddressString,
   Token,
 } from '@pwndao/sdk-core';
 import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
-import { getLoanContractAddress, SupportedChain } from '@pwndao/sdk-core';
-import { type ChainsWithChainLinkFeedSupport, convertNameIntoDenominator, FEED_REGISTRY, isExistBasePair, WETH } from '../constants.js';
+import { getLoanContractAddress } from '@pwndao/sdk-core';
 import type { IProposalChainLinkContract } from 'src/contracts/chain-link-proposal-contract.js';
 import { MIN_CREDIT_CALCULATION_DENOMINATOR } from './constants.js';
-
-export const getFeedData = (
-  chainId: ChainsWithChainLinkFeedSupport, 
-  base: AddressString, // collateral asset
-  quote: AddressString, // credit asset
-): { feedIntermediaryDenominations: AddressString[], feedInvertFlags: boolean[] } | null => {
-  if (base === quote) {
-    return null
-  }
-
-  const baseFeeds = FEED_REGISTRY?.[chainId]?.[base]
-  const quoteFeeds = FEED_REGISTRY?.[chainId]?.[quote]
-
-  if ((!baseFeeds?.length && base !== WETH[chainId]) || (!quoteFeeds?.length && quote !== WETH[chainId])) {
-    return null
-  }
-
-  // check for 0 hop route if it's weth
-  if (base === WETH[chainId]) {
-    // we checking if exists ETH feed for quote
-    const isExistDirectEthFeed = quoteFeeds.some(feed => feed === 'ETH')
-    if (isExistDirectEthFeed) {
-      if (isExistDirectEthFeed) {
-        return {
-          feedIntermediaryDenominations: [],
-          feedInvertFlags: [false],
-        }
-      }
-    }
-  } else if (quote === WETH[chainId]) {
-    // we checking if exists ETH feed for base
-    const isExistDirectEthFeed = baseFeeds.some(feed => feed === 'ETH')
-    if (isExistDirectEthFeed) {
-      return {
-        feedIntermediaryDenominations: [],
-        feedInvertFlags: [true],
-      }
-    }
-  }
-
-  console.log('here')
-
-  // Check for direct route (1-hop)
-  const commonFeed = baseFeeds.find(_baseFeed => quoteFeeds.includes(_baseFeed))
-  if (chainId === SupportedChain.Base) {
-    console.log('commonFeed', commonFeed)
-  }
-  if (commonFeed) {
-    return {
-      feedIntermediaryDenominations: [convertNameIntoDenominator(commonFeed)],
-      feedInvertFlags: [false, true],
-    }
-  }
-
-  // TODO check that the invert flags values are always correct
-  // e.g. check for 2-hop route
-  for (const quoteFeed of quoteFeeds) {
-    for (const baseFeed of baseFeeds) {
-      // TODO is this correct or we also need to test some diifferent combination?
-      const _isExistBasePair = isExistBasePair(chainId, quoteFeed, baseFeed)
-      console.log('isExistBasePair', _isExistBasePair)
-      console.log('quoteFeed', quoteFeed)
-      console.log('baseFeed', baseFeed)
-      if (_isExistBasePair?.found) {
-        // TODO check if does not match also non inverted to have the algo deterministic?
-        return {
-          feedIntermediaryDenominations: [convertNameIntoDenominator(quoteFeed), convertNameIntoDenominator(baseFeed)],
-          feedInvertFlags: [false, _isExistBasePair.isInverted, true]
-        }
-      } 
-    }
-  }
-
-  // TODO should we throw an error here?
-  return null
-}
+import { ChainsWithChainLinkFeedSupport, getFeedData } from 'src/utils/chainlink-feeds.js';
 
 export type CreateChainLinkElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
@@ -131,8 +54,6 @@ export class ChainLinkProposalStrategy
         ] ?? 0
         : params.ltv;
 
-    // TODO is this correct?
-    const ltvWithDecimals = BigInt(ltv * 100)
 
     const feedData = getFeedData(params.collateral.chainId as ChainsWithChainLinkFeedSupport, params.collateral.address, params.credit.address)
     if (!feedData) {
@@ -170,7 +91,7 @@ export class ChainLinkProposalStrategy
         ...commonFields,
         feedIntermediaryDenominations: feedData.feedIntermediaryDenominations,
         feedInvertFlags: feedData.feedInvertFlags,
-        loanToValue: ltvWithDecimals,
+        loanToValue: BigInt(ltv),
         minCreditAmount,
         chainId: params.collateral.chainId,
       },
@@ -320,9 +241,8 @@ export const createChainLinkElasticProposalBatch = async (
     durationDays: params.terms.duration.days || 0,
     ltv: params.terms.ltv,
     expirationDays: params.terms.expirationDays,
-    // TODO is this correct? previously was here conversion to BigInt
     minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
-    // id: '1',
+    id: '1',
     isOffer: params.terms.isOffer,
     relatedStrategyId: params.terms.relatedStrategyId
   };
