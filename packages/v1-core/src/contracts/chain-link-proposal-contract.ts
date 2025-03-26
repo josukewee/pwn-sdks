@@ -139,7 +139,6 @@ export class ChainLinkProposalContract implements IProposalChainLinkContract {
 					proposal.collateralAddress,
 					proposal.feedIntermediaryDenominations,
 					proposal.feedInvertFlags,
-					// TODO is this fine or we need to multiply this value by 100 ?
 					proposal.loanToValue
 				],
 			},
