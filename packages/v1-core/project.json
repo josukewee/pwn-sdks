@@ -19,19 +19,6 @@
         "write": true,
         "unsafe": false
       }
-    },
-    "biome-lint-fix": {
-      "executor": "@gitopslovers/nx-biome:biome-lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
-      "options": {
-        "lintFilePatterns": [
-          "packages/v1-core/src/**/*.ts"
-        ],
-        "write": true,
-        "unsafe": false
-      }
     }
   }
 }

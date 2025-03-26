@@ -286,7 +286,6 @@ export const createElasticProposalBatch = async (
 		ltv: params.terms.ltv,
 		expirationDays: params.terms.expirationDays,
 		minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
-		id: "1",
 		relatedStrategyId: params.terms.relatedStrategyId,
 		isOffer: params.terms.isOffer
 	};

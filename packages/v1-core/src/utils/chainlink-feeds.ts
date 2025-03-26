@@ -1,6 +1,7 @@
 import type { AddressString } from "@pwndao/sdk-core"
 import { SupportedChain, typeSafeObjectKeys } from "@pwndao/sdk-core"
 import { DAI, PYUSD, sUSDe, USDe, tBTC, wstETH, USDT, USDC, TUSD, cbETH, weETH, rsETH, ezETH, LBTC, rETH, solvBTC, stETH, WBTC, cbBTC, USD0, WETH, EURc, GHO, USDS } from "../addresses.js"
+import invariant from "ts-invariant"
 
 export const ENABLED_QUOTES = {
     [SupportedChain.Ethereum]: ['BTC', 'ETH', 'USD'] as const,
@@ -22,11 +23,7 @@ export type AllowedDenominatorsEnum = typeof ALLOWED_DENOMINATORS[number]
 
 type IsExistBasePairResult = { found: true, isInverted: boolean } | { found:false } | undefined
 export const isExistBasePair = (chainId: ChainsWithChainLinkFeedSupport, base: AllowedDenominatorsEnum, quote: AllowedDenominatorsEnum): IsExistBasePairResult => {
-    if (!CHAINS_WITH_CHAINLINK_FEED_SUPPORT.every(_chain => _chain !== chainId)) {
-        // TODO what to do here?
-        // TODO should we throw 
-        return undefined
-    }
+    invariant(CHAINS_WITH_CHAINLINK_FEED_SUPPORT.every(_chain => _chain !== chainId), "Chain does not support ChainLink proposals.")  
 
     const exactMatch = EXISTING_QUOTE_PAIRS[chainId].find(pair => pair === `${base}/${quote}`)
     if (exactMatch) {

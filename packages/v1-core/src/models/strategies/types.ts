@@ -80,7 +80,8 @@ export type ProposalWithHash = Proposal & {
 
 export type ProposalWithSignature = ProposalWithHash & {
 	chainId: SupportedChain;
-	signature: Hex;
+	// null for on-chain proposals
+	signature: Hex | null;
 	isOnChain: boolean;
 	sourceOfFunds?: AddressString;
 	multiproposalMerkleRoot?: Hex;

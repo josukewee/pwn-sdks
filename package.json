@@ -117,7 +117,7 @@
           "lintFilePatterns": [
             "**/*.ts"
           ],
-          "write": false,
+          "write": true,
           "unsafe": false
         }
       }

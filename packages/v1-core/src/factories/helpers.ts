@@ -33,15 +33,14 @@ type CommonProposalFieldsParams = {
 };
 
 export interface ILoanContract {
-	getProposerSpec(params: ILenderSpec, chainId: SupportedChain): Promise<Hex>;
+	getLenderSpecHash(params: ILenderSpec, chainId: SupportedChain): Promise<Hex>;
 }
 
-export interface IProposalContract {
-	createProposal(params: Proposal, deps: { persistProposal: IServerAPI["post"]["persistProposal"] }): Promise<ProposalWithSignature>;
-	getProposalHash(proposal: Proposal): Promise<Hex>;
-	createMultiProposal(
-		proposals: ProposalWithHash[],
-	): Promise<ProposalWithSignature[]>;
+export interface IProposalContract<TProposal extends Proposal> {
+	createProposal(params: TProposal, deps: { persistProposal: IServerAPI["post"]["persistProposal"] }): Promise<ProposalWithSignature>;
+	createOnChainProposal(params: TProposal): Promise<ProposalWithSignature>;
+	getProposalHash(proposal: TProposal): Promise<Hex>;
+	createMultiProposal(proposals: ProposalWithHash[]): Promise<ProposalWithSignature[]>;
 }
 
 export type ProposalContract =
@@ -68,7 +67,7 @@ export const getLendingCommonProposalFields = async (
 		relatedStrategyId,
 	} = params;
 
-	const proposerSpecHash = await deps.loanContract.getProposerSpec(
+	const proposerSpecHash = await deps.loanContract.getLenderSpecHash(
 		{
 			sourceOfFunds: user.address,
 		},

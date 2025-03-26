@@ -17,6 +17,7 @@ import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
 import { getLoanContractAddress } from '@pwndao/sdk-core';
 import type { IProposalChainLinkContract } from 'src/contracts/chain-link-proposal-contract.js';
 import { type ChainsWithChainLinkFeedSupport, getFeedData } from '../utils/chainlink-feeds.js';
+import invariant from 'ts-invariant';
 
 export type CreateChainLinkElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
@@ -55,11 +56,7 @@ export class ChainLinkProposalStrategy
 
 
     const feedData = getFeedData(params.collateral.chainId as ChainsWithChainLinkFeedSupport, params.collateral.address, params.credit.address)
-    if (!feedData) {
-      // TODO should we throw an error here? probably yes?
-      // TODO is this fine or we should use invariant or something?
-      throw new Error("We did not find a suitable price feed. Create classic elastic proposal instead.")
-    }
+    invariant(feedData, "We did not find a suitable price feed. Create classic elastic proposal instead.")
 
 		const minCreditAmount =
 			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(100);
@@ -241,7 +238,6 @@ export const createChainLinkElasticProposalBatch = async (
     ltv: params.terms.ltv,
     expirationDays: params.terms.expirationDays,
     minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
-    id: '1',
     isOffer: params.terms.isOffer,
     relatedStrategyId: params.terms.relatedStrategyId
   };

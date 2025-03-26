@@ -50,7 +50,7 @@ describe("Test make proposal", () => {
 		};
 
 		const loanContractMock = {
-			getProposerSpec: vi
+			getLenderSpecHash: vi
 			.fn()
 			.mockImplementation(() => Promise.resolve(proposerSpecHash)),
 		}
@@ -93,8 +93,8 @@ describe("Test make proposal", () => {
 		);
 
 		expect(contractMock.createProposal).toHaveBeenCalled();
-		expect(loanContractMock.getProposerSpec).toHaveBeenCalled();
-		expect(loanContractMock.getProposerSpec).toHaveBeenCalledWith(
+		expect(loanContractMock.getLenderSpecHash).toHaveBeenCalled();
+		expect(loanContractMock.getLenderSpecHash).toHaveBeenCalledWith(
 			{
 				sourceOfFunds: user_address,
 			},
@@ -136,7 +136,7 @@ describe("Test make proposal", () => {
 		};
 
 		const loanContractMock = {
-			getProposerSpec: vi
+			getLenderSpecHash: vi
 			.fn()
 			.mockImplementation(() => Promise.resolve(proposerSpecHash)),
 		}
@@ -178,8 +178,8 @@ describe("Test make proposal", () => {
 		);
 
 		expect(contractMock.createProposal).toHaveBeenCalled();
-		expect(loanContractMock.getProposerSpec).toHaveBeenCalled();
-		expect(loanContractMock.getProposerSpec).toHaveBeenCalledWith(
+		expect(loanContractMock.getLenderSpecHash).toHaveBeenCalled();
+		expect(loanContractMock.getLenderSpecHash).toHaveBeenCalledWith(
 			{
 				sourceOfFunds: user_address,
 			},
