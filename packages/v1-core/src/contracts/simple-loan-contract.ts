@@ -1,7 +1,7 @@
 import { getPwnSimpleLoanAddress, type Hex, type SupportedChain, isChainSupported } from "@pwndao/sdk-core";
 import type { Config } from "@wagmi/core";
 import type { ILoanContract } from "src/factories/helpers.js";
-import { readPwnSimpleLoanGetLenderSpecHash } from "src/generated.js";
+import { readPwnSimpleLoanGetLenderSpecHash } from "../generated.js";
 import type { ILenderSpec } from "src/models/terms.js";
 import invariant from "ts-invariant";
 

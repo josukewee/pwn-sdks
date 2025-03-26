@@ -128,12 +128,14 @@ export class ElasticProposalStrategy
 	 * @param user - The user creating the proposal
 	 * @param creditAmount - The credit amount for the proposal
 	 * @param utilizedCreditId - if provided, all credits with share the same utilized credit ID
+	 * @param isOffer - if true, the proposal is an offer
 	 * @returns The proposals parameters
 	 */
 	getProposalsParams(
 		user: UserWithNonceManager,
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
+		isOffer: boolean,
 	): CreateElasticProposalParams[] {
 		const result: CreateElasticProposalParams[] = [];
 		for (const credit of this.term.creditAssets) {
@@ -154,7 +156,7 @@ export class ElasticProposalStrategy
 					expirationDays: this.term.expirationDays,
 					minCreditAmountPercentage: this.term.minCreditAmountPercentage,
 					relatedStrategyId: this.term.relatedStrategyId,
-					isOffer: this.term.isOffer
+					isOffer
 				});
 			}
 		}
@@ -174,11 +176,13 @@ export class ElasticProposalStrategy
 		user: UserWithNonceManager,
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
+		isOffer: boolean,
 	): Promise<ElasticProposal[]> {
 		const paramsArray = this.getProposalsParams(
 			user,
 			creditAmount,
 			utilizedCreditId,
+			isOffer,
 		);
 		const result: ElasticProposal[] = [];
 
@@ -236,7 +240,6 @@ export const createElasticProposal = async (
 		expirationDays: params.expirationDays,
 		minCreditAmountPercentage: params.minCreditAmountPercentage,
 		relatedStrategyId: params.relatedStrategyId,
-		isOffer: params.isOffer
 	};
 
 	const strategy = new ElasticProposalStrategy(
@@ -249,6 +252,7 @@ export const createElasticProposal = async (
 		params.user,
 		params.creditAmount,
 		params.utilizedCreditId,
+		params.isOffer,
 	);
 	return proposals[0];
 };
@@ -287,7 +291,6 @@ export const createElasticProposalBatch = async (
 		expirationDays: params.terms.expirationDays,
 		minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
 		relatedStrategyId: params.terms.relatedStrategyId,
-		isOffer: params.terms.isOffer
 	};
 
 	// Create a strategy and generate all proposals
@@ -301,6 +304,7 @@ export const createElasticProposalBatch = async (
 		params.terms.user,
 		params.terms.creditAmount,
 		params.terms.utilizedCreditId,
+		params.terms.isOffer,
 	);
 
 	return proposals;

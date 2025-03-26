@@ -98,7 +98,8 @@ export class ChainLinkProposalStrategy
   getProposalsParams(
     user: UserWithNonceManager,
     creditAmount: bigint,
-    utilizedCreditId: Hex
+    utilizedCreditId: Hex,
+    isOffer: boolean
   ): CreateChainLinkElasticProposalParams[] {
     const result: CreateChainLinkElasticProposalParams[] = [];
     for (const credit of this.term.creditAssets) {
@@ -118,7 +119,7 @@ export class ChainLinkProposalStrategy
 					expirationDays: this.term.expirationDays,
 					minCreditAmountPercentage: this.term.minCreditAmountPercentage,
 					relatedStrategyId: this.term.id,
-					isOffer: this.term.isOffer,
+					isOffer,
 				});
 			}
 		}
@@ -129,12 +130,14 @@ export class ChainLinkProposalStrategy
   async createLendingProposals(
     user: UserWithNonceManager,
     creditAmount: bigint,
-    utilizedCreditId: Hex
+    utilizedCreditId: Hex,
+    isOffer: boolean,
   ): Promise<ChainLinkProposal[]> {
     const paramsArray = this.getProposalsParams(
       user,
       creditAmount,
-      utilizedCreditId
+      utilizedCreditId,
+      isOffer,
     );
     const result: ChainLinkProposal[] = [];
 
@@ -190,7 +193,6 @@ export const createChainLinkElasticProposal = async (
 		ltv: params.ltv,
 		expirationDays: params.expirationDays,
 		minCreditAmountPercentage: params.minCreditAmountPercentage,
-		isOffer: params.isOffer,
 		relatedStrategyId: params.relatedStrategyId
 	};
 
@@ -202,7 +204,8 @@ export const createChainLinkElasticProposal = async (
   const proposals = await strategy.createLendingProposals(
     params.user,
     params.creditAmount,
-    params.utilizedCreditId
+    params.utilizedCreditId,
+    params.isOffer
   );
   return proposals[0];
 };
@@ -238,7 +241,6 @@ export const createChainLinkElasticProposalBatch = async (
     ltv: params.terms.ltv,
     expirationDays: params.terms.expirationDays,
     minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
-    isOffer: params.terms.isOffer,
     relatedStrategyId: params.terms.relatedStrategyId
   };
 
@@ -251,7 +253,8 @@ export const createChainLinkElasticProposalBatch = async (
   const proposals = await strategy.createLendingProposals(
     params.terms.user,
     params.terms.creditAmount,
-    params.terms.utilizedCreditId
+    params.terms.utilizedCreditId,
+    params.terms.isOffer,
   );
 
   return proposals;

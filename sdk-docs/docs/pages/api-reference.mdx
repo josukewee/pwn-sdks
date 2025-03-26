@@ -88,6 +88,7 @@ function useMakeProposals(config: {
   proposalType: ProposalType;
   api: IProposalElasticAPIDeps;
   contract: ElasticProposalContract;
+  loanContract: ILoanContract;
 }) => {
   mutateAsync: (params: ProposalParams) => Promise<void>;
   isPending: boolean;

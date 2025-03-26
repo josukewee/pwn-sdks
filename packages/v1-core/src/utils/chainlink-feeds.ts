@@ -6,7 +6,7 @@ import invariant from "ts-invariant"
 export const ENABLED_QUOTES = {
     [SupportedChain.Ethereum]: ['BTC', 'ETH', 'USD'] as const,
     [SupportedChain.Base]: ['BTC', 'ETH', 'USD', 'EUR'] as const,
-    [SupportedChain.Sepolia]: ['ETH', 'USD']
+    [SupportedChain.Sepolia]: ['ETH', 'USD'] as const
 } as const
 
 export const EXISTING_QUOTE_PAIRS = {
@@ -112,7 +112,7 @@ export const FEED_REGISTRY = {
         [USDC[SupportedChain.Sepolia]]: ["USD"],
         // note: slight hack as WETH == ETH, so these are the same feeds
         //  as for ETH in EXISTING_QUOTE_PAIRS
-        [WETH[SupportedChain.Sepolia]]: ["ETH", "BTC"]
+        [WETH[SupportedChain.Sepolia]]: ["ETH", "USD"]
     }
 } as const satisfies FeedRegistryType
 
@@ -166,7 +166,7 @@ export const getFeedData = (
     }
   
     // Check for direct route (1-hop)
-    const commonFeed = baseFeeds.find(_baseFeed => quoteFeeds.includes(_baseFeed))
+    const commonFeed = baseFeeds.find((_baseFeed: AllowedDenominatorsEnum) => quoteFeeds.some(_quoteFeed => _baseFeed === _quoteFeed))
     if (commonFeed) {
       return {
         feedIntermediaryDenominations: [convertNameIntoDenominator(commonFeed)],

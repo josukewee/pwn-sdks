@@ -28,7 +28,6 @@ export interface StrategyTerm {
 	minCreditAmountPercentage: number;
 	id?: string; // if provided it's strategy id
 	relatedStrategyId?: string;
-	isOffer: boolean;
 }
 
 export interface IProposalStrategy<
@@ -39,12 +38,14 @@ export interface IProposalStrategy<
 		user: UserWithNonceManager,
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
+		isOffer: boolean,
 	): CreateElasticProposalParams[];
 
 	createLendingProposals(
 		user: UserWithNonceManager,
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
+		isOffer: boolean,
 	): Promise<T[]>;
 }
 
