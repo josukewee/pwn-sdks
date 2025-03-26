@@ -1,4 +1,4 @@
-import { AddressString } from "@pwndao/sdk-core"
+import type { AddressString } from "@pwndao/sdk-core"
 import { SupportedChain, typeSafeObjectKeys } from "@pwndao/sdk-core"
 import { DAI, PYUSD, sUSDe, USDe, tBTC, wstETH, USDT, USDC, TUSD, cbETH, weETH, rsETH, ezETH, LBTC, rETH, solvBTC, stETH, WBTC, cbBTC, USD0, WETH, EURc, GHO, USDS } from "../addresses.js"
 
@@ -120,13 +120,13 @@ export const FEED_REGISTRY = {
 } as const satisfies FeedRegistryType
 
 export const convertNameIntoDenominator = (name: AllowedDenominatorsEnum): AddressString => {
-    name = name.toUpperCase() as AllowedDenominatorsEnum
+    const nameUppercase = name.toUpperCase() as AllowedDenominatorsEnum
     return {
         BTC: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB" as AddressString,
         ETH: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" as AddressString, 
         EUR: "0x00000000000000000000000000000000000003d2" as AddressString,
         USD: "0x0000000000000000000000000000000000000348" as AddressString,
-    }[name]
+    }[nameUppercase]
 }
 
 export const getFeedData = (

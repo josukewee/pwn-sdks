@@ -1,6 +1,6 @@
 import { SupportedChain, type AddressString, generateAddress } from '@pwndao/sdk-core';
-import { AllowedDenominatorsEnum, convertNameIntoDenominator, FEED_REGISTRY, getFeedData } from '../utils/chainlink-feeds.js';
-import { ChainsWithChainLinkFeedSupport } from '../utils/chainlink-feeds.js';
+import { type AllowedDenominatorsEnum, convertNameIntoDenominator, FEED_REGISTRY, getFeedData } from '../utils/chainlink-feeds.js';
+import type { ChainsWithChainLinkFeedSupport } from '../utils/chainlink-feeds.js';
 import { DAI, ezETH, LBTC, PYUSD, stETH, tBTC, USDC, USDT, WBTC, weETH, WETH } from '../addresses.js';
 
 describe('getFeedData', () => {
