@@ -2,6 +2,7 @@
 
 import type {
 	CreateElasticProposalBatchParams,
+	ILoanContract,
 	IProposalChainLinkContract,
 	IProposalElasticAPIDeps,
 	IProposalElasticContract,
@@ -15,12 +16,14 @@ export type ElasticProposalProps = {
 	proposalType: ProposalType.Elastic;
 	api: IProposalElasticAPIDeps;
 	contract: IProposalElasticContract;
+	loanContract: ILoanContract;
 };
 
 export type ChainLinkProposalProps = {
 	proposalType: ProposalType.ChainLink;
 	api: IProposalElasticAPIDeps;
 	contract: IProposalChainLinkContract;
+	loanContract: ILoanContract;
 };
 
 type Props = ElasticProposalProps | ChainLinkProposalProps;
@@ -36,6 +39,7 @@ export const useMakeProposals = (proposalParams: Props) => {
 				{
 					api: proposalParams.api,
 					contract: proposalParams.contract as IProposalElasticContract,
+					loanContract: proposalParams.loanContract,
 				},
 			);
 

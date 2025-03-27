@@ -12,7 +12,7 @@ import { type IElasticProposalBase, ProposalType } from "./proposal-base.js";
 export class ElasticProposal implements IElasticProposalBase {
 	type = ProposalType.Elastic as const;
 
-	ERC712_TYPES = {
+	static ERC712_TYPES = {
 		Proposal: [
 			{ name: "collateralCategory", type: "uint8" },
 			{ name: "collateralAddress", type: "address" },

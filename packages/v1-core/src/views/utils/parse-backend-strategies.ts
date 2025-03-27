@@ -64,13 +64,14 @@ export const parseBackendStrategiesResponse = (
 		expirationDays: backendData.proposalExpirationDays,
 		minCreditAmountPercentage: backendData.minAllowedBorrowPercentage * MIN_CREDIT_CALCULATION_DENOMINATOR,
 		id: backendData.id,
+		relatedStrategyId: backendData.id,
 	};
 
 	return {
 		id: backendData.id,
 		name: backendData.title,
 		description: backendData.description,
-		terms,
+		terms: terms as StrategyTerm,
 		curator: backendData.curator && {
 			id: backendData.curator.id,
 			name: backendData.curator.name,

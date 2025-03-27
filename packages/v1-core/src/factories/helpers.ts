@@ -16,8 +16,9 @@ import type {
 } from "../models/strategies/types.js";
 import type { Proposal } from "../models/strategies/types.js";
 import type { ILenderSpec } from "../models/terms.js";
-import type { IProposalChainLinkContract } from "./create-chain-link-proposal.js";
-import type { IProposalElasticContract } from "./create-elastic-proposal.js";
+import type { IProposalChainLinkContract } from "../contracts/chain-link-proposal-contract.js";
+import type { IProposalElasticContract } from "../contracts/elastic-proposal-contract.js";
+import type { IServerAPI } from "../factories/types.js";
 
 type CommonProposalFieldsParams = {
 	user: UserWithNonceManager;
@@ -31,13 +32,15 @@ type CommonProposalFieldsParams = {
 	loanContract: AddressString;
 };
 
-export interface IProposalContract {
-	getProposerSpec(params: ILenderSpec, chainId: SupportedChain): Promise<Hex>;
-	createProposal(params: Proposal): Promise<ProposalWithSignature>;
-	getProposalHash(proposal: Proposal): Promise<Hex>;
-	createMultiProposal(
-		proposals: ProposalWithHash[],
-	): Promise<ProposalWithSignature[]>;
+export interface ILoanContract {
+	getLenderSpecHash(params: ILenderSpec, chainId: SupportedChain): Promise<Hex>;
+}
+
+export interface IProposalContract<TProposal extends Proposal> {
+	createProposal(params: TProposal, deps: { persistProposal: IServerAPI["post"]["persistProposal"] }): Promise<ProposalWithSignature>;
+	createOnChainProposal(params: TProposal): Promise<ProposalWithSignature>;
+	getProposalHash(proposal: TProposal): Promise<Hex>;
+	createMultiProposal(proposals: ProposalWithHash[]): Promise<ProposalWithSignature[]>;
 }
 
 export type ProposalContract =
@@ -48,6 +51,7 @@ export const getLendingCommonProposalFields = async (
 	params: CommonProposalFieldsParams & IProposalMisc,
 	deps: {
 		contract: ProposalContract;
+		loanContract: ILoanContract
 	},
 ): Promise<ICommonProposalFields> => {
 	const {
@@ -63,7 +67,7 @@ export const getLendingCommonProposalFields = async (
 		relatedStrategyId,
 	} = params;
 
-	const proposerSpecHash = await deps.contract.getProposerSpec(
+	const proposerSpecHash = await deps.loanContract.getLenderSpecHash(
 		{
 			sourceOfFunds: user.address,
 		},

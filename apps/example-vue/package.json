@@ -47,7 +47,7 @@
 					"lintFilePatterns": [
 						"apps/example-vue/**/*.ts"
 					],
-					"write": false,
+					"write": true,
 					"unsafe": false
         }
       }
