@@ -18,6 +18,9 @@ export default defineConfig({
 					path: "../custom-instance.ts",
 					name: "customInstance",
 				},
+				fetch: { 
+					includeHttpResponseReturnType: true,
+				},
 			},
 		},
 		input: "./src/schema.yaml",
