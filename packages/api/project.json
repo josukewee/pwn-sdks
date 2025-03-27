@@ -3,9 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "packages/api/src",
   "projectType": "library",
-  "tags": [
-    "api"
-  ],
+  "tags": ["api"],
   "targets": {
     "build-code": {
       "executor": "nx:run-commands",
@@ -13,19 +11,15 @@
         "command": "npx orval",
         "cwd": "packages/api",
         "env": {
-					"PWN_API_URL": ""
-				}
+          "PWN_API_URL": ""
+        }
       }
     },
     "biome-lint": {
       "executor": "@gitopslovers/nx-biome:biome-lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "packages/api/**/*.ts"
-        ],
+        "lintFilePatterns": ["packages/api/**/*.ts"],
         "write": true,
         "unsafe": false
       }
