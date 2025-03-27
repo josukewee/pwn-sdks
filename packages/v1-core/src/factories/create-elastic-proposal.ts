@@ -18,8 +18,6 @@ import { LTV_DENOMINATOR } from "./constants.js";
 
 export type CreateElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
-	relatedStrategyId?: string;
-	isOffer: boolean;
 };
 
 export interface IProposalElasticAPIDeps {
@@ -260,15 +258,7 @@ export const createElasticProposal = async (
 /**
  * Parameters for creating a batch of elastic proposals
  */
-export type CreateElasticProposalBatchParams = {
-	terms: Omit<BaseTerm, "collateral" | "credit"> & {
-		minCreditAmountPercentage: number;
-		relatedThesisId?: string;
-		isOffer: boolean;
-	};
-	collateralAssets: Token[];
-	creditAssets: Token[];
-};
+export type CreateElasticProposalBatchParams = CreateElasticProposalParams[];
 
 /**
  * Creates multiple elastic proposals in a batch
@@ -283,14 +273,15 @@ export const createElasticProposalBatch = async (
 ): Promise<ElasticProposal[]> => {
 	// Create a strategy term with the batch parameters
 	const dummyTerm: StrategyTerm = {
-		creditAssets: params.creditAssets,
-		collateralAssets: params.collateralAssets,
+		creditAssets: params.map(param => param.credit),
+		collateralAssets: params.map(param => param.collateral),
 		apr: params.terms.apr,
-		durationDays: params.terms.duration.days || 0,
+		durationDays: params[0].duration.days || 0,
 		ltv: params.terms.ltv,
-		expirationDays: params.terms.expirationDays,
-		minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
-		relatedStrategyId: params.terms.relatedStrategyId,
+		// note: this is fine to do if all proposals in batch have these same values
+		expirationDays: params[0].expirationDays,
+		minCreditAmountPercentage: params[0].minCreditAmountPercentage,
+		relatedStrategyId: params[0].relatedStrategyId,
 	};
 
 	// Create a strategy and generate all proposals

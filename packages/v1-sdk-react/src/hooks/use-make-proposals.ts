@@ -2,6 +2,7 @@
 
 import type {
 	CreateElasticProposalBatchParams,
+	CreateChainLinkElasticProposalBatchParams,
 	ILoanContract,
 	IProposalChainLinkContract,
 	IProposalElasticAPIDeps,
@@ -28,7 +29,7 @@ export type ChainLinkProposalProps = {
 
 type Props = ElasticProposalProps | ChainLinkProposalProps;
 
-type ProposalParams = CreateElasticProposalBatchParams;
+type ProposalParams = CreateElasticProposalBatchParams | CreateChainLinkElasticProposalBatchParams;
 
 export const useMakeProposals = (proposalParams: Props) => {
 	return useMutation<ProposalWithSignature[], Error, ProposalParams>({
