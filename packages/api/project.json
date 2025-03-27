@@ -23,7 +23,7 @@
         "lintFilePatterns": [
           "packages/api/**/*.ts"
         ],
-        "write": false,
+        "write": true,
         "unsafe": false
       }
     }

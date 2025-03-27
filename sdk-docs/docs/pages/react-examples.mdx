@@ -168,6 +168,7 @@ export default function StrategyCommitmentCreator({ strategy }: Props) {
       updateNonces: API.post.updateNonce,
     } as IProposalElasticAPIDeps,
     contract: new ElasticProposalContract(config),
+    loanContract: new SimpleLoanContract(config),
   });
 
   const { userWithNonce: user } = useUserWithNonce([sepolia.id]);
