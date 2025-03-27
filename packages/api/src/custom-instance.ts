@@ -5,20 +5,32 @@
  * @returns {string} The base URL for API requests
  */
 const getBaseURL = (): string => {
-	return (
-		process.env.VITE_PWN_API_URL ||
-		process.env.PWN_API_URL ||
-		"https://api.pwn.xyz"
-	);
+	// Check for Vite environment (browser/client-side)
+	if (typeof import.meta !== 'undefined' && import.meta.env) {
+		if (import.meta.env.VITE_PWN_API_URL) {
+			return import.meta.env.VITE_PWN_API_URL;
+		}
+	}
+	
+	// Check for Node.js environment (server-side)
+	if (typeof process !== 'undefined' && process.env) {
+		if (process.env.VITE_PWN_API_URL) {
+			return process.env.VITE_PWN_API_URL;
+		}
+		if (process.env.PWN_API_URL) {
+			return process.env.PWN_API_URL;
+		}
+	}
+	
+	// Default fallback for any environment
+	return "https://api.pwn.xyz";
 };
 
-export const customInstance = async <T>({
-	url,
+export const customInstance = async <T>(url: string, {
 	method,
 	params,
 	data,
 }: {
-	url: string;
 	method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 	params?: Record<string, string>;
 	data?: unknown;
