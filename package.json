@@ -71,6 +71,7 @@
     "eslint-plugin-react": "7.35.0",
     "eslint-plugin-react-hooks": "5.0.0",
     "eslint-plugin-vitest": "^0.5.4",
+    "husky": "^9.1.7",
     "jiti": "2.4.2",
     "jsdoc-to-markdown": "^9.1.1",
     "jsdom": "~22.1.0",
@@ -123,5 +124,8 @@
       }
     }
   },
-  "packageManager": "yarn@3.2.3+sha224.953c8233f7a92884eee2de69a1b92d1f2ec1655e66d08071ba9a02fa"
+  "packageManager": "yarn@3.2.3+sha224.953c8233f7a92884eee2de69a1b92d1f2ec1655e66d08071ba9a02fa",
+  "scripts": {
+    "prepare": "husky"
+  }
 }

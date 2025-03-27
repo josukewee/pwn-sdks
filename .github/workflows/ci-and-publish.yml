@@ -35,7 +35,7 @@ jobs:
       - run: bun install
       - uses: nrwl/nx-set-shas@v4
 
-      - run: bunx nx affected -t biome-lint test build --parallel --verbose
+      - run: bunx nx affected -t biome-lint test build --parallel
 
   publish:
     name: Publish All Packages
