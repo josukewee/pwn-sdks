@@ -13,6 +13,7 @@ import { useMakeProposals, useUserWithNonce } from "@pwndao/sdk-v1-vue";
 import {
 	ElasticProposalContract,
 	type IProposalElasticAPIDeps,
+	SimpleLoanContract,
 	type Strategy,
 	createUtilizedCreditId,
 } from "@pwndao/v1-core";
@@ -51,6 +52,7 @@ const {
 		updateNonces: API.post.updateNonce,
 	} as IProposalElasticAPIDeps,
 	contract: new ElasticProposalContract(config),
+  loanContract: new SimpleLoanContract(config),
 });
 
 const { userWithNonce: user } = useUserWithNonce([sepolia.id]);

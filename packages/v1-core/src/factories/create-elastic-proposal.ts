@@ -5,17 +5,16 @@ import { ElasticProposal } from "../models/proposals/elastic-proposal.js";
 import type { IElasticProposalBase } from "../models/proposals/proposal-base.js";
 import type {
 	IProposalStrategy,
-	ProposalWithHash,
-	ProposalWithSignature,
 	StrategyTerm,
 } from "../models/strategies/types.js";
 import { calculateCreditPerCollateralUnit } from "../utils/calculations.js";
 import {
-	type IProposalContract,
 	getLendingCommonProposalFields,
+	type ILoanContract,
 } from "./helpers.js";
 import type { BaseTerm, IServerAPI } from "./types.js";
-import { LTV_DENOMINATOR, MIN_CREDIT_CALCULATION_DENOMINATOR } from "./constants.js";
+import type { IProposalElasticContract } from "src/contracts/elastic-proposal-contract.js";
+import { LTV_DENOMINATOR } from "./constants.js";
 
 export type CreateElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
@@ -30,15 +29,6 @@ export interface IProposalElasticAPIDeps {
 	updateNonces: IServerAPI["post"]["updateNonce"];
 }
 
-export interface IProposalElasticContract extends IProposalContract {
-	getCollateralAmount(proposal: ElasticProposal): Promise<bigint>;
-	getProposalHash(proposal: ElasticProposal): Promise<Hex>;
-	createProposal(proposal: ElasticProposal): Promise<ProposalWithSignature>;
-	createMultiProposal(
-		proposals: ProposalWithHash[],
-	): Promise<ProposalWithSignature[]>;
-}
-
 export class ElasticProposalStrategy
 	implements IProposalStrategy<IElasticProposalBase>
 {
@@ -46,6 +36,7 @@ export class ElasticProposalStrategy
 		public term: StrategyTerm,
 		public api: IProposalElasticAPIDeps,
 		public contract: IProposalElasticContract,
+		public loanContract: ILoanContract,
 	) {}
 
 	async implementElasticProposal(
@@ -75,7 +66,7 @@ export class ElasticProposalStrategy
 			(params.creditAmount * creditUsdPrice) /
 			BigInt(10 ** params.credit.decimals);
 		const minCreditAmountUsd =
-			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(MIN_CREDIT_CALCULATION_DENOMINATOR);
+			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(100);
 
 		const ltv =
 			typeof params.ltv === 'object' 
@@ -108,6 +99,7 @@ export class ElasticProposalStrategy
 			},
 			{
 				contract: contract,
+				loanContract: this.loanContract,
 			},
 		);
 
@@ -136,12 +128,14 @@ export class ElasticProposalStrategy
 	 * @param user - The user creating the proposal
 	 * @param creditAmount - The credit amount for the proposal
 	 * @param utilizedCreditId - if provided, all credits with share the same utilized credit ID
+	 * @param isOffer - if true, the proposal is an offer
 	 * @returns The proposals parameters
 	 */
 	getProposalsParams(
 		user: UserWithNonceManager,
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
+		isOffer: boolean,
 	): CreateElasticProposalParams[] {
 		const result: CreateElasticProposalParams[] = [];
 		for (const credit of this.term.creditAssets) {
@@ -162,7 +156,7 @@ export class ElasticProposalStrategy
 					expirationDays: this.term.expirationDays,
 					minCreditAmountPercentage: this.term.minCreditAmountPercentage,
 					relatedStrategyId: this.term.relatedStrategyId,
-					isOffer: this.term.isOffer
+					isOffer
 				});
 			}
 		}
@@ -182,11 +176,13 @@ export class ElasticProposalStrategy
 		user: UserWithNonceManager,
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
+		isOffer: boolean,
 	): Promise<ElasticProposal[]> {
 		const paramsArray = this.getProposalsParams(
 			user,
 			creditAmount,
 			utilizedCreditId,
+			isOffer,
 		);
 		const result: ElasticProposal[] = [];
 
@@ -221,6 +217,7 @@ export class ElasticProposalStrategy
 export type ElasticProposalDeps = {
 	api: IProposalElasticAPIDeps;
 	contract: IProposalElasticContract;
+	loanContract: ILoanContract;
 };
 
 /**
@@ -243,18 +240,19 @@ export const createElasticProposal = async (
 		expirationDays: params.expirationDays,
 		minCreditAmountPercentage: params.minCreditAmountPercentage,
 		relatedStrategyId: params.relatedStrategyId,
-		isOffer: params.isOffer
 	};
 
 	const strategy = new ElasticProposalStrategy(
 		dummyTerm,
 		deps.api,
 		deps.contract,
+		deps.loanContract,
 	);
 	const proposals = await strategy.createLendingProposals(
 		params.user,
 		params.creditAmount,
 		params.utilizedCreditId,
+		params.isOffer,
 	);
 	return proposals[0];
 };
@@ -292,9 +290,7 @@ export const createElasticProposalBatch = async (
 		ltv: params.terms.ltv,
 		expirationDays: params.terms.expirationDays,
 		minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
-		id: "1",
 		relatedStrategyId: params.terms.relatedStrategyId,
-		isOffer: params.terms.isOffer
 	};
 
 	// Create a strategy and generate all proposals
@@ -302,11 +298,13 @@ export const createElasticProposalBatch = async (
 		dummyTerm,
 		deps.api,
 		deps.contract,
+		deps.loanContract,
 	);
 	const proposals = await strategy.createLendingProposals(
 		params.terms.user,
 		params.terms.creditAmount,
 		params.terms.utilizedCreditId,
+		params.terms.isOffer,
 	);
 
 	return proposals;

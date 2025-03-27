@@ -55,6 +55,8 @@ import type {
 	Web3authCuratorGroupsListParams,
 } from "../schemas";
 
+import { customInstance } from "../../custom-instance";
+
 export type fetchAssetMetadataResponse200 = {
 	data: AssetDetail;
 	status: 200;
@@ -74,11 +76,11 @@ export const getFetchAssetMetadataUrl = (
 ) => {
 	const normalizedParams = new URLSearchParams();
 
-	for (const [key, value] of Object.entries(params || {})) {
+	Object.entries(params || {}).forEach(([key, value]) => {
 		if (value !== undefined) {
 			normalizedParams.append(key, value === null ? "null" : value.toString());
 		}
-	}
+	});
 
 	const stringifiedParams = normalizedParams.toString();
 
@@ -94,22 +96,13 @@ export const fetchAssetMetadata = async (
 	params?: FetchAssetMetadataParams,
 	options?: RequestInit,
 ): Promise<fetchAssetMetadataResponse> => {
-	const res = await fetch(
+	return customInstance<fetchAssetMetadataResponse>(
 		getFetchAssetMetadataUrl(chainId, address, tokenId, params),
 		{
 			...options,
 			method: "GET",
 		},
 	);
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: fetchAssetMetadataResponse["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as fetchAssetMetadataResponse;
 };
 
 export type fetchNFTAssetCollectionMetadata2Response200 = {
@@ -151,24 +144,13 @@ export const fetchNFTAssetCollectionMetadata2 = async (
 	params?: FetchNFTAssetCollectionMetadata2Params,
 	options?: RequestInit,
 ): Promise<fetchNFTAssetCollectionMetadata2Response> => {
-	const res = await fetch(
+	return customInstance<fetchNFTAssetCollectionMetadata2Response>(
 		getFetchNFTAssetCollectionMetadata2Url(chainId, address, params),
 		{
 			...options,
 			method: "GET",
 		},
 	);
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: fetchNFTAssetCollectionMetadata2Response["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as fetchNFTAssetCollectionMetadata2Response;
 };
 
 export type fetchNFTAssetCollectionMetadataResponse200 = {
@@ -208,24 +190,13 @@ export const fetchNFTAssetCollectionMetadata = async (
 	params?: FetchNFTAssetCollectionMetadataParams,
 	options?: RequestInit,
 ): Promise<fetchNFTAssetCollectionMetadataResponse> => {
-	const res = await fetch(
+	return customInstance<fetchNFTAssetCollectionMetadataResponse>(
 		getFetchNFTAssetCollectionMetadataUrl(openseaSlug, params),
 		{
 			...options,
 			method: "GET",
 		},
 	);
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: fetchNFTAssetCollectionMetadataResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as fetchNFTAssetCollectionMetadataResponse;
 };
 
 /**
@@ -274,22 +245,13 @@ export const fetchAssetPrice = async (
 	params?: FetchAssetPriceParams,
 	options?: RequestInit,
 ): Promise<fetchAssetPriceResponse> => {
-	const res = await fetch(
+	return customInstance<fetchAssetPriceResponse>(
 		getFetchAssetPriceUrl(chainId, contractAddress, tokenId, params),
 		{
 			...options,
 			method: "GET",
 		},
 	);
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: fetchAssetPriceResponse["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as fetchAssetPriceResponse;
 };
 
 export type fetchUserErc20sResponse200 = {
@@ -329,19 +291,13 @@ export const fetchUserErc20s = async (
 	params?: FetchUserErc20sParams,
 	options?: RequestInit,
 ): Promise<fetchUserErc20sResponse> => {
-	const res = await fetch(getFetchUserErc20sUrl(chainId, userAddress, params), {
-		...options,
-		method: "GET",
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: fetchUserErc20sResponse["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as fetchUserErc20sResponse;
+	return customInstance<fetchUserErc20sResponse>(
+		getFetchUserErc20sUrl(chainId, userAddress, params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
 };
 
 export type fetchUserNftsResponse200 = {
@@ -381,19 +337,13 @@ export const fetchUserNfts = async (
 	params?: FetchUserNftsParams,
 	options?: RequestInit,
 ): Promise<fetchUserNftsResponse> => {
-	const res = await fetch(getFetchUserNftsUrl(chainId, userAddress, params), {
-		...options,
-		method: "GET",
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: fetchUserNftsResponse["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as fetchUserNftsResponse;
+	return customInstance<fetchUserNftsResponse>(
+		getFetchUserNftsUrl(chainId, userAddress, params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
 };
 
 export type notificationsMarkAsSeenAllResponse204 = {
@@ -417,21 +367,13 @@ export const notificationsMarkAsSeenAll = async (
 	recipientAddress: string,
 	options?: RequestInit,
 ): Promise<notificationsMarkAsSeenAllResponse> => {
-	const res = await fetch(getNotificationsMarkAsSeenAllUrl(recipientAddress), {
-		...options,
-		method: "POST",
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: notificationsMarkAsSeenAllResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as notificationsMarkAsSeenAllResponse;
+	return customInstance<notificationsMarkAsSeenAllResponse>(
+		getNotificationsMarkAsSeenAllUrl(recipientAddress),
+		{
+			...options,
+			method: "POST",
+		},
+	);
 };
 
 export type notificationsMarkAsSeenResponse204 = {
@@ -456,23 +398,15 @@ export const notificationsMarkAsSeen = async (
 	markAsSeenBodyRequest: MarkAsSeenBodyRequest,
 	options?: RequestInit,
 ): Promise<notificationsMarkAsSeenResponse> => {
-	const res = await fetch(getNotificationsMarkAsSeenUrl(recipientAddress), {
-		...options,
-		method: "POST",
-		headers: { "Content-Type": "application/json", ...options?.headers },
-		body: JSON.stringify(markAsSeenBodyRequest),
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: notificationsMarkAsSeenResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as notificationsMarkAsSeenResponse;
+	return customInstance<notificationsMarkAsSeenResponse>(
+		getNotificationsMarkAsSeenUrl(recipientAddress),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(markAsSeenBodyRequest),
+		},
+	);
 };
 
 export type notificationUserUnseenNotificationsCountResponse200 = {
@@ -512,24 +446,13 @@ export const notificationUserUnseenNotificationsCount = async (
 	params?: NotificationUserUnseenNotificationsCountParams,
 	options?: RequestInit,
 ): Promise<notificationUserUnseenNotificationsCountResponse> => {
-	const res = await fetch(
+	return customInstance<notificationUserUnseenNotificationsCountResponse>(
 		getNotificationUserUnseenNotificationsCountUrl(recipientAddress, params),
 		{
 			...options,
 			method: "GET",
 		},
 	);
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: notificationUserUnseenNotificationsCountResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as notificationUserUnseenNotificationsCountResponse;
 };
 
 export type web3authCuratorGroupsListResponse200 = {
@@ -567,21 +490,13 @@ export const web3authCuratorGroupsList = async (
 	params?: Web3authCuratorGroupsListParams,
 	options?: RequestInit,
 ): Promise<web3authCuratorGroupsListResponse> => {
-	const res = await fetch(getWeb3authCuratorGroupsListUrl(params), {
-		...options,
-		method: "GET",
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: web3authCuratorGroupsListResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as web3authCuratorGroupsListResponse;
+	return customInstance<web3authCuratorGroupsListResponse>(
+		getWeb3authCuratorGroupsListUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
 };
 
 export type web3authCuratorGroupsRetrieveResponse200 = {
@@ -605,21 +520,13 @@ export const web3authCuratorGroupsRetrieve = async (
 	name: string,
 	options?: RequestInit,
 ): Promise<web3authCuratorGroupsRetrieveResponse> => {
-	const res = await fetch(getWeb3authCuratorGroupsRetrieveUrl(name), {
-		...options,
-		method: "GET",
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: web3authCuratorGroupsRetrieveResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as web3authCuratorGroupsRetrieveResponse;
+	return customInstance<web3authCuratorGroupsRetrieveResponse>(
+		getWeb3authCuratorGroupsRetrieveUrl(name),
+		{
+			...options,
+			method: "GET",
+		},
+	);
 };
 
 /**
@@ -646,21 +553,13 @@ export const web3authMessageToSignRetrieve = async (
 	walletAddress: string,
 	options?: RequestInit,
 ): Promise<web3authMessageToSignRetrieveResponse> => {
-	const res = await fetch(getWeb3authMessageToSignRetrieveUrl(walletAddress), {
-		...options,
-		method: "GET",
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: web3authMessageToSignRetrieveResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as web3authMessageToSignRetrieveResponse;
+	return customInstance<web3authMessageToSignRetrieveResponse>(
+		getWeb3authMessageToSignRetrieveUrl(walletAddress),
+		{
+			...options,
+			method: "GET",
+		},
+	);
 };
 
 export type web3authNotificationSettingsRetrieveResponse200 = {
@@ -686,24 +585,13 @@ export const web3authNotificationSettingsRetrieve = async (
 	walletAddress: string,
 	options?: RequestInit,
 ): Promise<web3authNotificationSettingsRetrieveResponse> => {
-	const res = await fetch(
+	return customInstance<web3authNotificationSettingsRetrieveResponse>(
 		getWeb3authNotificationSettingsRetrieveUrl(walletAddress),
 		{
 			...options,
 			method: "GET",
 		},
 	);
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: web3authNotificationSettingsRetrieveResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as web3authNotificationSettingsRetrieveResponse;
 };
 
 export type web3authNotificationSettingsCreateResponse200 = {
@@ -730,7 +618,7 @@ export const web3authNotificationSettingsCreate = async (
 	notificationSettingsRequest: NotificationSettingsRequest,
 	options?: RequestInit,
 ): Promise<web3authNotificationSettingsCreateResponse> => {
-	const res = await fetch(
+	return customInstance<web3authNotificationSettingsCreateResponse>(
 		getWeb3authNotificationSettingsCreateUrl(walletAddress),
 		{
 			...options,
@@ -739,17 +627,6 @@ export const web3authNotificationSettingsCreate = async (
 			body: JSON.stringify(notificationSettingsRequest),
 		},
 	);
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: web3authNotificationSettingsCreateResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as web3authNotificationSettingsCreateResponse;
 };
 
 export type web3authUserProfileRetrieveResponse200 = {
@@ -773,21 +650,13 @@ export const web3authUserProfileRetrieve = async (
 	walletAddress: string,
 	options?: RequestInit,
 ): Promise<web3authUserProfileRetrieveResponse> => {
-	const res = await fetch(getWeb3authUserProfileRetrieveUrl(walletAddress), {
-		...options,
-		method: "GET",
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: web3authUserProfileRetrieveResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as web3authUserProfileRetrieveResponse;
+	return customInstance<web3authUserProfileRetrieveResponse>(
+		getWeb3authUserProfileRetrieveUrl(walletAddress),
+		{
+			...options,
+			method: "GET",
+		},
+	);
 };
 
 export type web3authUserProfileCreateResponse200 = {
@@ -812,23 +681,15 @@ export const web3authUserProfileCreate = async (
 	userProfileRequestRequest: UserProfileRequestRequest,
 	options?: RequestInit,
 ): Promise<web3authUserProfileCreateResponse> => {
-	const res = await fetch(getWeb3authUserProfileCreateUrl(walletAddress), {
-		...options,
-		method: "POST",
-		headers: { "Content-Type": "application/json", ...options?.headers },
-		body: JSON.stringify(userProfileRequestRequest),
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: web3authUserProfileCreateResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as web3authUserProfileCreateResponse;
+	return customInstance<web3authUserProfileCreateResponse>(
+		getWeb3authUserProfileCreateUrl(walletAddress),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(userProfileRequestRequest),
+		},
+	);
 };
 
 export type web3authWalletsRetrieveResponse200 = {
@@ -852,21 +713,13 @@ export const web3authWalletsRetrieve = async (
 	walletAddress: string,
 	options?: RequestInit,
 ): Promise<web3authWalletsRetrieveResponse> => {
-	const res = await fetch(getWeb3authWalletsRetrieveUrl(walletAddress), {
-		...options,
-		method: "GET",
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: web3authWalletsRetrieveResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as web3authWalletsRetrieveResponse;
+	return customInstance<web3authWalletsRetrieveResponse>(
+		getWeb3authWalletsRetrieveUrl(walletAddress),
+		{
+			...options,
+			method: "GET",
+		},
+	);
 };
 
 export type allProposalHashesForRootResponse200 = {
@@ -892,24 +745,13 @@ export const allProposalHashesForRoot = async (
 	multiproposalMerkleRoot: string,
 	options?: RequestInit,
 ): Promise<allProposalHashesForRootResponse> => {
-	const res = await fetch(
+	return customInstance<allProposalHashesForRootResponse>(
 		getAllProposalHashesForRootUrl(multiproposalMerkleRoot),
 		{
 			...options,
 			method: "GET",
 		},
 	);
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: allProposalHashesForRootResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as allProposalHashesForRootResponse;
 };
 
 export type proposalCreateBatchResponse201 = {
@@ -933,23 +775,15 @@ export const proposalCreateBatch = async (
 	createProposalRequestSchemaRequest: CreateProposalRequestSchemaRequest[],
 	options?: RequestInit,
 ): Promise<proposalCreateBatchResponse> => {
-	const res = await fetch(getProposalCreateBatchUrl(), {
-		...options,
-		method: "POST",
-		headers: { "Content-Type": "application/json", ...options?.headers },
-		body: JSON.stringify(createProposalRequestSchemaRequest),
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: proposalCreateBatchResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as proposalCreateBatchResponse;
+	return customInstance<proposalCreateBatchResponse>(
+		getProposalCreateBatchUrl(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(createProposalRequestSchemaRequest),
+		},
+	);
 };
 
 export type proposalCreateBatch2Response201 = {
@@ -973,23 +807,15 @@ export const proposalCreateBatch2 = async (
 	createProposalRequestSchemaRequest: CreateProposalRequestSchemaRequest[],
 	options?: RequestInit,
 ): Promise<proposalCreateBatch2Response> => {
-	const res = await fetch(getProposalCreateBatch2Url(), {
-		...options,
-		method: "POST",
-		headers: { "Content-Type": "application/json", ...options?.headers },
-		body: JSON.stringify(createProposalRequestSchemaRequest),
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: proposalCreateBatch2Response["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as proposalCreateBatch2Response;
+	return customInstance<proposalCreateBatch2Response>(
+		getProposalCreateBatch2Url(),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(createProposalRequestSchemaRequest),
+		},
+	);
 };
 
 export type freeUserNonceRetrieveResponse200 = {
@@ -1033,7 +859,7 @@ export const freeUserNonceRetrieve = async (
 	params?: FreeUserNonceRetrieveParams,
 	options?: RequestInit,
 ): Promise<freeUserNonceRetrieveResponse> => {
-	const res = await fetch(
+	return customInstance<freeUserNonceRetrieveResponse>(
 		getFreeUserNonceRetrieveUrl(
 			chainId,
 			revokedNonceContractAddress,
@@ -1045,17 +871,6 @@ export const freeUserNonceRetrieve = async (
 			method: "GET",
 		},
 	);
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: freeUserNonceRetrieveResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as freeUserNonceRetrieveResponse;
 };
 
 export type loanDetailResponse200 = {
@@ -1083,22 +898,13 @@ export const loanDetail = async (
 	onChainId: string,
 	options?: RequestInit,
 ): Promise<loanDetailResponse> => {
-	const res = await fetch(
+	return customInstance<loanDetailResponse>(
 		getLoanDetailUrl(chainId, loanTokenContractAddress, onChainId),
 		{
 			...options,
 			method: "GET",
 		},
 	);
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: loanDetailResponse["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as loanDetailResponse;
 };
 
 export type proposalCreateResponse201 = {
@@ -1120,21 +926,12 @@ export const proposalCreate = async (
 	createProposalRequestSchemaRequest: CreateProposalRequestSchemaRequest,
 	options?: RequestInit,
 ): Promise<proposalCreateResponse> => {
-	const res = await fetch(getProposalCreateUrl(), {
+	return customInstance<proposalCreateResponse>(getProposalCreateUrl(), {
 		...options,
 		method: "POST",
 		headers: { "Content-Type": "application/json", ...options?.headers },
 		body: JSON.stringify(createProposalRequestSchemaRequest),
 	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: proposalCreateResponse["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as proposalCreateResponse;
 };
 
 export type proposalAndLoanListResponse200 = {
@@ -1181,21 +978,13 @@ export const proposalAndLoanList = async (
 	params?: ProposalAndLoanListParams,
 	options?: RequestInit,
 ): Promise<proposalAndLoanListResponse> => {
-	const res = await fetch(getProposalAndLoanListUrl(params), {
-		...options,
-		method: "GET",
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: proposalAndLoanListResponse["data"] = body
-		? JSON.parse(body)
-		: {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as proposalAndLoanListResponse;
+	return customInstance<proposalAndLoanListResponse>(
+		getProposalAndLoanListUrl(params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
 };
 
 export type proposalDetailResponse200 = {
@@ -1217,19 +1006,10 @@ export const proposalDetail = async (
 	id: number,
 	options?: RequestInit,
 ): Promise<proposalDetailResponse> => {
-	const res = await fetch(getProposalDetailUrl(id), {
+	return customInstance<proposalDetailResponse>(getProposalDetailUrl(id), {
 		...options,
 		method: "GET",
 	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: proposalDetailResponse["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as proposalDetailResponse;
 };
 
 export type listProposalsResponse200 = {
@@ -1272,19 +1052,10 @@ export const listProposals = async (
 	params?: ListProposalsParams,
 	options?: RequestInit,
 ): Promise<listProposalsResponse> => {
-	const res = await fetch(getListProposalsUrl(params), {
+	return customInstance<listProposalsResponse>(getListProposalsUrl(params), {
 		...options,
 		method: "GET",
 	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: listProposalsResponse["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as listProposalsResponse;
 };
 
 export type thesisListResponse200 = {
@@ -1318,19 +1089,10 @@ export const thesisList = async (
 	params?: ThesisListParams,
 	options?: RequestInit,
 ): Promise<thesisListResponse> => {
-	const res = await fetch(getThesisListUrl(params), {
+	return customInstance<thesisListResponse>(getThesisListUrl(params), {
 		...options,
 		method: "GET",
 	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: thesisListResponse["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as thesisListResponse;
 };
 
 /**
@@ -1368,21 +1130,12 @@ export const createStrategy = async (
 	thesisCreateUpdateSchemaRequest: ThesisCreateUpdateSchemaRequest,
 	options?: RequestInit,
 ): Promise<createStrategyResponse> => {
-	const res = await fetch(getCreateStrategyUrl(), {
+	return customInstance<createStrategyResponse>(getCreateStrategyUrl(), {
 		...options,
 		method: "POST",
 		headers: { "Content-Type": "application/json", ...options?.headers },
 		body: JSON.stringify(thesisCreateUpdateSchemaRequest),
 	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: createStrategyResponse["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as createStrategyResponse;
 };
 
 export type thesisDetailResponse200 = {
@@ -1417,19 +1170,10 @@ export const thesisDetail = async (
 	params?: ThesisDetailParams,
 	options?: RequestInit,
 ): Promise<thesisDetailResponse> => {
-	const res = await fetch(getThesisDetailUrl(id, params), {
+	return customInstance<thesisDetailResponse>(getThesisDetailUrl(id, params), {
 		...options,
 		method: "GET",
 	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: thesisDetailResponse["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as thesisDetailResponse;
 };
 
 /**
@@ -1474,21 +1218,12 @@ export const updateStrategy = async (
 	thesisCreateUpdateSchemaRequest: ThesisCreateUpdateSchemaRequest,
 	options?: RequestInit,
 ): Promise<updateStrategyResponse> => {
-	const res = await fetch(getUpdateStrategyUrl(id), {
+	return customInstance<updateStrategyResponse>(getUpdateStrategyUrl(id), {
 		...options,
 		method: "PUT",
 		headers: { "Content-Type": "application/json", ...options?.headers },
 		body: JSON.stringify(thesisCreateUpdateSchemaRequest),
 	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: updateStrategyResponse["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as updateStrategyResponse;
 };
 
 export type thesisDetail2Response200 = {
@@ -1526,19 +1261,13 @@ export const thesisDetail2 = async (
 	params?: ThesisDetail2Params,
 	options?: RequestInit,
 ): Promise<thesisDetail2Response> => {
-	const res = await fetch(getThesisDetail2Url(slug, params), {
-		...options,
-		method: "GET",
-	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: thesisDetail2Response["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as thesisDetail2Response;
+	return customInstance<thesisDetail2Response>(
+		getThesisDetail2Url(slug, params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
 };
 
 /**
@@ -1583,19 +1312,10 @@ export const updateStrategy2 = async (
 	thesisCreateUpdateSchemaRequest: ThesisCreateUpdateSchemaRequest,
 	options?: RequestInit,
 ): Promise<updateStrategy2Response> => {
-	const res = await fetch(getUpdateStrategy2Url(slug), {
+	return customInstance<updateStrategy2Response>(getUpdateStrategy2Url(slug), {
 		...options,
 		method: "PUT",
 		headers: { "Content-Type": "application/json", ...options?.headers },
 		body: JSON.stringify(thesisCreateUpdateSchemaRequest),
 	});
-
-	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-	const data: updateStrategy2Response["data"] = body ? JSON.parse(body) : {};
-
-	return {
-		data,
-		status: res.status,
-		headers: res.headers,
-	} as updateStrategy2Response;
 };

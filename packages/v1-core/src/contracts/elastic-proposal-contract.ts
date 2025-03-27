@@ -1,43 +1,24 @@
-import { SimpleMerkleTree } from "@openzeppelin/merkle-tree";
 import {
-	ZERO_ADDRESS,
 	getElasticProposalContractAddress,
-	getPwnSimpleLoanSimpleProposalAddress,
 } from "@pwndao/sdk-core";
-import type { SupportedChain } from "@pwndao/sdk-core";
-import { type Config, signTypedData } from "@wagmi/core";
+import { signTypedData } from "@wagmi/core";
 import type { Hex } from "viem";
-import type { IProposalElasticContract } from "../factories/create-elastic-proposal.js";
 import {
-	type ProposalWithHash,
+	type IProposalContract,
+	type IServerAPI,
 	type ProposalWithSignature,
 	readPwnSimpleLoanElasticProposalGetProposalHash,
-	readPwnSimpleLoanGetLenderSpecHash,
 	writePwnSimpleLoanElasticProposalMakeProposal,
 } from "../index.js";
 import { readPwnSimpleLoanElasticProposalGetCollateralAmount } from "../index.js";
-import type { ElasticProposal } from "../models/proposals/elastic-proposal.js";
-import type { ILenderSpec } from "../models/terms.js";
+import { ElasticProposal } from "../models/proposals/elastic-proposal.js";
+import { BaseProposalContract } from "./base-proposal-contract.js";
 
-export class ElasticProposalContract implements IProposalElasticContract {
-	constructor(private readonly config: Config) {}
+export interface IProposalElasticContract extends IProposalContract<ElasticProposal> {
+	getCollateralAmount(proposal: ElasticProposal): Promise<bigint>;
+}
 
-	async getProposerSpec(
-		params: ILenderSpec,
-		chainId: SupportedChain,
-	): Promise<Hex> {
-		const data = await readPwnSimpleLoanGetLenderSpecHash(this.config, {
-			address: getPwnSimpleLoanSimpleProposalAddress(chainId),
-			chainId: chainId,
-			args: [
-				{
-					sourceOfFunds: params.sourceOfFunds,
-				},
-			],
-		});
-		return data as Hex;
-	}
-
+export class ElasticProposalContract extends BaseProposalContract<ElasticProposal> implements IProposalElasticContract {
 	async getProposalHash(proposal: ElasticProposal): Promise<Hex> {
 		// on-chain call is not required here. We can just use hashTypedData from wagmi
 		const data = await readPwnSimpleLoanElasticProposalGetProposalHash(
@@ -51,10 +32,43 @@ export class ElasticProposalContract implements IProposalElasticContract {
 		return data as Hex;
 	}
 
+	async signProposal(proposal: ElasticProposal): Promise<ProposalWithSignature> {
+		const hash = await this.getProposalHash(proposal)
+		
+		const domain = {
+			name: 'PWNSimpleLoanElasticProposal',
+			version: '1.1',
+			chainId: proposal.chainId,
+			verifyingContract: getElasticProposalContractAddress(proposal.chainId),
+		  }
+
+		const signature = await signTypedData(this.config, {
+      		domain,
+			types: ElasticProposal.ERC712_TYPES,
+      		primaryType: 'Proposal',
+      		message: proposal.createProposalStruct(),
+		})
+
+		return Object.assign(proposal, {
+			signature,
+			hash,
+			isOnChain: false,
+		}) as ProposalWithSignature;
+	}
+
 	async createProposal(
 		proposal: ElasticProposal,
+		deps: {
+			persistProposal: IServerAPI["post"]["persistProposal"];
+		}
 	): Promise<ProposalWithSignature> {
-		const data = await writePwnSimpleLoanElasticProposalMakeProposal(
+		const signedProposal = await this.signProposal(proposal);
+		await deps.persistProposal(signedProposal);
+		return signedProposal
+	}
+
+	async createOnChainProposal(proposal: ElasticProposal): Promise<ProposalWithSignature> {
+		const proposalHash = await writePwnSimpleLoanElasticProposalMakeProposal(
 			this.config,
 			{
 				address: getElasticProposalContractAddress(proposal.chainId),
@@ -64,54 +78,17 @@ export class ElasticProposalContract implements IProposalElasticContract {
 		);
 
 		return Object.assign(proposal, {
-			signature: data,
-			hash: ZERO_ADDRESS, // todo: compute hash here
+			signature: null,  // on-chain proposals does not have signature
+			hash: proposalHash,
 			isOnChain: true,
 		}) as ProposalWithSignature;
-	}
-
-	async createMultiProposal(
-		proposals: ProposalWithHash[],
-	): Promise<ProposalWithSignature[]> {
-		// todo: take this from func args
-		const merkleTree = SimpleMerkleTree.of(
-			proposals.map((proposal) => proposal.hash),
-		);
-		const multiproposalMerkleRoot = merkleTree.root;
-
-		const multiproposalDomain = {
-			name: "PWNMultiproposal",
-		};
-
-		const types = {
-			Multiproposal: [{ name: "multiproposalMerkleRoot", type: "bytes32" }],
-		};
-
-		const signature = await signTypedData(this.config, {
-			domain: multiproposalDomain,
-			types,
-			primaryType: "Multiproposal",
-			message: {
-				multiproposalMerkleRoot,
-			},
-		});
-
-		return proposals.map(
-			(proposal) =>
-				({
-					...proposal,
-					hash: proposal.hash,
-					multiproposalMerkleRoot,
-					signature,
-				}) as ProposalWithSignature,
-		);
 	}
 
 	async getCollateralAmount(proposal: ElasticProposal): Promise<bigint> {
 		const data = await readPwnSimpleLoanElasticProposalGetCollateralAmount(
 			this.config,
 			{
-				address: getPwnSimpleLoanSimpleProposalAddress(proposal.chainId),
+				address: getElasticProposalContractAddress(proposal.chainId),
 				chainId: proposal.chainId,
 				args: [proposal.availableCreditLimit, proposal.creditPerCollateralUnit],
 			},

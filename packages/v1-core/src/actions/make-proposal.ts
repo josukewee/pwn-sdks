@@ -36,8 +36,9 @@ export const makeProposal = async <T extends ProposalType>(
 			>[0];
 			const elasticDeps = deps as Parameters<typeof createElasticProposal>[1];
 			const proposal = await createElasticProposal(elasticParams, elasticDeps);
-			proposalWithSignature =
-				await elasticDeps.contract.createProposal(proposal);
+			proposalWithSignature = await elasticDeps.contract.createProposal(proposal, {
+				persistProposal: elasticDeps.api.persistProposal,
+			});
 			break;
 		}
 		case ProposalType.ChainLink: {
@@ -51,8 +52,9 @@ export const makeProposal = async <T extends ProposalType>(
 				chainLinkParams,
 				chainLinkDeps,
 			);
-			proposalWithSignature =
-				await chainLinkDeps.contract.createProposal(proposal);
+			proposalWithSignature = await chainLinkDeps.contract.createProposal(proposal, {
+				persistProposal: chainLinkDeps.api.persistProposal,
+			});
 			break;
 		}
 		case ProposalType.DutchAuction:

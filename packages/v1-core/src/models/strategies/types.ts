@@ -28,7 +28,6 @@ export interface StrategyTerm {
 	minCreditAmountPercentage: number;
 	id?: string; // if provided it's strategy id
 	relatedStrategyId?: string;
-	isOffer: boolean;
 }
 
 export interface IProposalStrategy<
@@ -39,12 +38,14 @@ export interface IProposalStrategy<
 		user: UserWithNonceManager,
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
+		isOffer: boolean,
 	): CreateElasticProposalParams[];
 
 	createLendingProposals(
 		user: UserWithNonceManager,
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
+		isOffer: boolean,
 	): Promise<T[]>;
 }
 
@@ -80,7 +81,8 @@ export type ProposalWithHash = Proposal & {
 
 export type ProposalWithSignature = ProposalWithHash & {
 	chainId: SupportedChain;
-	signature: Hex;
+	// null for on-chain proposals
+	signature: Hex | null;
 	isOnChain: boolean;
 	sourceOfFunds?: AddressString;
 	multiproposalMerkleRoot?: Hex;

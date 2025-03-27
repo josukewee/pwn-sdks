@@ -12,7 +12,7 @@ import { type IOracleProposalBase, ProposalType } from "./proposal-base.js";
 export class ChainLinkProposal implements IOracleProposalBase {
 	type = ProposalType.ChainLink as const;
 
-	ERC712_TYPES = {
+	static ERC712_TYPES = {
 		Proposal: [
 			{ name: "collateralCategory", type: "uint8" },
 			{ name: "collateralAddress", type: "address" },
