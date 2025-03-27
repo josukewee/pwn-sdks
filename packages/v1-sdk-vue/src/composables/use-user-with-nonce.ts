@@ -13,14 +13,14 @@ export const useUserWithNonce = (chainIds: MaybeRefOrGetter<SupportedChain[]>) =
 	});
 
 	const { data, isLoading, error } = useQuery({
-		queryKey: ["user-with-nonce", user, _chainIds],
+		queryKey: ["user-with-nonce", user.value, _chainIds.value],
 		queryFn: ({ queryKey }) =>
 			getUserWithNonce(
 				queryKey[1] as User,
 				API,
 				queryKey[2] as SupportedChain[],
 			),
-		enabled: computed(() => !!user.value && !!chainIds),
+		enabled: computed(() => !!user.value && !!_chainIds.value),
 	});
 
 	return {
