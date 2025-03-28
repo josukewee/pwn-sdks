@@ -1,49 +1,22 @@
 import type {
-	CreateChainLinkElasticProposalBatchParams,
-	CreateElasticProposalBatchParams,
-	ILoanContract,
-	IProposalChainLinkAPIDeps,
-	IProposalChainLinkContract,
-	IProposalElasticAPIDeps,
-	IProposalElasticContract,
-	ProposalType,
+	ImplementedProposalTypes,
+	ProposalParamWithDeps,
 	ProposalWithSignature,
 } from "@pwndao/v1-core";
 import { makeProposals } from "@pwndao/v1-core";
 import { useMutation } from "@tanstack/vue-query";
+import { useConfig } from "@wagmi/vue";
 
-export type ElasticProposalProps = {
-	api: IProposalElasticAPIDeps;
-	loanContract: ILoanContract;
-};
+export const useMakeProposals = () => {
 
-export type ChainLinkProposalProps = {
-	api: IProposalChainLinkAPIDeps;
-	loanContract: ILoanContract;
-};
+	const config = useConfig();
 
-type Props = ElasticProposalProps | ChainLinkProposalProps;
-type ProposalParams = CreateElasticProposalBatchParams | CreateChainLinkElasticProposalBatchParams;
-export type CommonCreateProposalParams = CreateElasticProposalBatchParams & CreateChainLinkElasticProposalBatchParams;
-
-export const useMakeProposals = <T extends Props>(proposalParams: T) => {
-	return useMutation<ProposalWithSignature[], Error, ProposalParams>({
-		mutationFn: async (params: ProposalParams[]) => {
-			type Deps = T extends { proposalType: ProposalType.Elastic } 
-				? ElasticProposalProps
-				: ChainLinkProposalProps;
-
-			const deps = {
-				api: proposalParams.api,
-				loanContract: proposalParams.loanContract,
-			} as Deps;
-
-			const proposals = await makeProposals(
+	return useMutation<ProposalWithSignature[], Error, ProposalParamWithDeps<ImplementedProposalTypes>[]>({
+		mutationFn: async (params: ProposalParamWithDeps<ImplementedProposalTypes>[]) => {
+			return await makeProposals(
+				config,
 				params,
-				deps,
 			);
-
-			return proposals;
 		},
 		onSuccess: (data) => {
 			console.log(data);

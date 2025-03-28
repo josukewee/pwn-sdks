@@ -1,5 +1,5 @@
 import type { UserWithNonceManager } from "@pwndao/sdk-core";
-import type { Hex, Token } from "@pwndao/sdk-core";
+import type { Hex } from "@pwndao/sdk-core";
 import { getLoanContractAddress } from "@pwndao/sdk-core";
 import { ElasticProposal } from "../models/proposals/elastic-proposal.js";
 import type { IElasticProposalBase } from "../models/proposals/proposal-base.js";
@@ -267,36 +267,43 @@ export type CreateElasticProposalBatchParams = CreateElasticProposalParams[];
  * @param deps - RPC interface and contract
  * @returns Array of created elastic proposals
  */
-export const createElasticProposalBatch = async (
-	params: CreateElasticProposalBatchParams,
-	deps: ElasticProposalDeps,
-): Promise<ElasticProposal[]> => {
-	// Create a strategy term with the batch parameters
-	const dummyTerm: StrategyTerm = {
-		creditAssets: params.map(param => param.credit),
-		collateralAssets: params.map(param => param.collateral),
-		apr: params.terms.apr,
-		durationDays: params[0].duration.days || 0,
-		ltv: params.terms.ltv,
-		// note: this is fine to do if all proposals in batch have these same values
-		expirationDays: params[0].expirationDays,
-		minCreditAmountPercentage: params[0].minCreditAmountPercentage,
-		relatedStrategyId: params[0].relatedStrategyId,
-	};
+// TODO do we even need this? or is it enough to handle batches inside of makeProposals?
+// export const createElasticProposalBatch = async (
+// 	params: CreateElasticProposalBatchParams,
+// 	deps: ElasticProposalDeps,
+// ): Promise<ElasticProposal[]> => {
+// 	// Create a strategy term with the batch parameters
+// 	const dummyTerm: StrategyTerm = {
+// 		creditAssets: params.map(param => param.credit),
+// 		collateralAssets: params.map(param => param.collateral),
+// 		// TODO how does the passed apr looks here?
+// 		apr: Object.fromEntries(
+// 			params.flatMap((param, index) => [
+// 				[getUniqueCreditCollateralKey(param.credit, param.collateral), param.apr]
+// 			])
+// 		),
+// 		durationDays: params[0].duration.days || 0,
+// 		// TODO how does the passed ltv looks here?
+// 		ltv: params.ltv,
+// 		// note: this is fine to do if all proposals in batch have these same values
+// 		expirationDays: params[0].expirationDays,
+// 		minCreditAmountPercentage: params[0].minCreditAmountPercentage,
+// 		relatedStrategyId: params[0].relatedStrategyId,
+// 	};
 
-	// Create a strategy and generate all proposals
-	const strategy = new ElasticProposalStrategy(
-		dummyTerm,
-		deps.api,
-		deps.contract,
-		deps.loanContract,
-	);
-	const proposals = await strategy.createLendingProposals(
-		params.terms.user,
-		params.terms.creditAmount,
-		params.terms.utilizedCreditId,
-		params.terms.isOffer,
-	);
+// 	// Create a strategy and generate all proposals
+// 	const strategy = new ElasticProposalStrategy(
+// 		dummyTerm,
+// 		deps.api,
+// 		deps.contract,
+// 		deps.loanContract,
+// 	);
+// 	const proposals = await strategy.createLendingProposals(
+// 		params.terms.user,
+// 		params.terms.creditAmount,
+// 		params.terms.utilizedCreditId,
+// 		params.terms.isOffer,
+// 	);
 
-	return proposals;
-};
+// 	return proposals;
+// };
