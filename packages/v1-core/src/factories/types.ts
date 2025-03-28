@@ -1,7 +1,6 @@
 import type {
 	FreeUserNonceSchemaWorkaround,
-	proposalCreateBatchResponse,
-	proposalCreateResponse,
+	ProposalDetailSchema,
 } from "@pwndao/api-sdk";
 import type {
 	AddressString,
@@ -58,10 +57,10 @@ export interface IServerAPI {
 	post: {
 		persistProposal: (
 			params: ProposalWithSignature,
-		) => Promise<proposalCreateResponse>;
+		) => Promise<ProposalDetailSchema>;
 		persistProposals: (
 			params: ProposalWithSignature[],
-		) => Promise<proposalCreateBatchResponse>;
+		) => Promise<ProposalDetailSchema[]>;
 		/**
 		 * Updates the nonce for the user and the chain
 		 * @param userAddress
