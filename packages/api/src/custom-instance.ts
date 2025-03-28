@@ -6,14 +6,17 @@
  */
 const getBaseURL = (): string => {
 	// Check for Vite environment (browser/client-side)
-	if (typeof import.meta !== 'undefined' && import.meta.env) {
+	if (typeof import.meta !== "undefined" && import.meta.env) {
 		if (import.meta.env.VITE_PWN_API_URL) {
 			return import.meta.env.VITE_PWN_API_URL;
 		}
 	}
-	
+
 	// Check for Node.js environment (server-side)
-	if (typeof process !== 'undefined' && process.env) {
+	if (typeof process !== "undefined" && process.env) {
+		if (process.env.NEXT_PUBLIC_PWN_API_URL) {
+			return process.env.NEXT_PUBLIC_PWN_API_URL;
+		}
 		if (process.env.VITE_PWN_API_URL) {
 			return process.env.VITE_PWN_API_URL;
 		}
@@ -21,21 +24,25 @@ const getBaseURL = (): string => {
 			return process.env.PWN_API_URL;
 		}
 	}
-	
+
 	// Default fallback for any environment
 	return "https://api.pwn.xyz";
 };
 
-export const customInstance = async <T>(url: string, {
-	method,
-	params,
-	data,
-}: {
-	method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-	params?: Record<string, string>;
-	data?: unknown;
-	responseType?: string;
-}): Promise<T> => {
+export const customInstance = async <T>(
+	url: string,
+	{
+		method,
+		headers,
+		body,
+		params,
+	}: {
+		method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+		headers?: HeadersInit;
+		body?: RequestInit["body"];
+		params?: Record<string, string>;
+	},
+): Promise<T> => {
 	const baseURL = getBaseURL();
 	let targetUrl = `${baseURL}${url}`;
 
@@ -45,7 +52,8 @@ export const customInstance = async <T>(url: string, {
 
 	const response = await fetch(targetUrl, {
 		method,
-		...(data ? { body: JSON.stringify(data) } : {}),
+		headers,
+		body,
 	});
 
 	return response.json();
