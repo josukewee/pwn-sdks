@@ -85,6 +85,5 @@
     "@nx/next": { "application": { "style": "css", "linter": "eslint" } },
     "@nx/vue": { "application": { "linter": "eslint" } }
   },
-  "neverConnectToCloud": true,
-  "nxCloudId": "67d9c81c4aeb47e46a0459dd"
+  "neverConnectToCloud": true
 }
