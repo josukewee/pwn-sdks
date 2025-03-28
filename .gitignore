@@ -58,4 +58,7 @@ test-output
 
 ./contracts/solidity/** 
 
-./apps/local
+apps/local
+apps/**/.env
+apps/example-next/.env
+apps/example-vue/.env
