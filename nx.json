@@ -67,7 +67,7 @@
 			"workspaceChangelog": { "file": false, "createRelease": "github" }
 		},
 		"version": {
-			"preVersionCommand": "bunx nx run-many -t build",
+			"preVersionCommand": "bunx nx run-many -t build"
 		}
 	},
 	"targetDefaults": {
