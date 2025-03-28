@@ -13,6 +13,7 @@ import {
 	type SupportedChain,
 	getRevokedNonceContractAddress,
 } from "@pwndao/sdk-core";
+import { Decimal } from "decimal.js";
 import invariant from "ts-invariant";
 import type { IServerAPI } from "./factories/types.js";
 import type {
@@ -45,17 +46,46 @@ export const API: IServerAPI = {
 			return data.results.map(parseBackendProposalResponse) ?? [];
 		},
 		getAssetUsdUnitPrice: async (asset: BaseAsset) => {
-			const assetPrice = await fetchAssetPrice(
-				asset.chainId.toString(),
-				asset.address,
-				"null",
-			);
-			if (!assetPrice.best_price?.price.usd_amount) {
-				throw new Error("No price found for asset");
-			}
-			const amount =
-				+assetPrice.best_price.price.usd_amount * 10 ** asset.decimals;
-			return BigInt(amount);
+			const MAX_RETRIES = 3;
+			const RETRY_DELAY = 600;
+
+			const fetchPrice = async (retryCount = 0): Promise<bigint> => {
+				const assetPrice = await fetchAssetPrice(
+					asset.chainId.toString(),
+					asset.address,
+					"null",
+				);
+
+				// If price is being fetched, wait and retry
+				if (
+					assetPrice.is_task_scheduled === true &&
+					assetPrice.task_info.skipped.length === 0
+				) {
+					if (retryCount < MAX_RETRIES) {
+						await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+						return await fetchPrice(retryCount + 1);
+					}
+					throw new Error("Max retries reached while fetching asset price");
+				}
+
+				if (
+					!assetPrice.best_price ||
+					!assetPrice.best_price?.price.usd_amount
+				) {
+					throw new Error("No price found for asset");
+				}
+
+				const priceString = assetPrice.best_price.price.usd_amount;
+				const decimalPrice = new Decimal(priceString);
+
+				const scaledPrice = decimalPrice
+					.times(Decimal.pow(10, asset.decimals))
+					.floor();
+
+				return BigInt(scaledPrice.toFixed(0));
+			};
+
+			return fetchPrice();
 		},
 		recentNonce: async (
 			userAddress: AddressString,
@@ -66,10 +96,7 @@ export const API: IServerAPI = {
 				getRevokedNonceContractAddress(chainId),
 				userAddress,
 			);
-			return [
-				BigInt(data.freeUserNonces[0]),
-				BigInt(data.freeUserNonceSpace),
-			];
+			return [BigInt(data.freeUserNonces[0]), BigInt(data.freeUserNonceSpace)];
 		},
 	},
 	post: {
