@@ -14,6 +14,9 @@ const getBaseURL = (): string => {
 
 	// Check for Node.js environment (server-side)
 	if (typeof process !== "undefined" && process.env) {
+		if (process.env.NEXT_PUBLIC_PWN_API_URL) {
+			return process.env.NEXT_PUBLIC_PWN_API_URL;
+		}
 		if (process.env.VITE_PWN_API_URL) {
 			return process.env.VITE_PWN_API_URL;
 		}
@@ -35,7 +38,7 @@ export const customInstance = async <T>(
 		params,
 	}: {
 		method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-		headers?: Record<string, string>;
+		headers?: HeadersInit;
 		body?: RequestInit["body"];
 		params?: Record<string, string>;
 	},
