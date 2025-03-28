@@ -19,7 +19,7 @@ export default defineConfig({
 					name: "customInstance",
 				},
 				fetch: { 
-					includeHttpResponseReturnType: true,
+					includeHttpResponseReturnType: false,
 				},
 			},
 		},

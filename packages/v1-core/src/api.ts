@@ -28,13 +28,13 @@ export const API: IServerAPI = {
 	get: {
 		getStrategyDetail: async (strategyId: string): Promise<Strategy> => {
 			const data = await thesisDetail(strategyId);
-			invariant(data.data !== undefined, "Error parsing response");
-			return parseBackendStrategiesResponse(data.data);
+			invariant(data !== undefined, "Error parsing response");
+			return parseBackendStrategiesResponse(data);
 		},
 		getStrategies: async (chainId: SupportedChain): Promise<Strategy[]> => {
 			const data = await thesisList({ chain_id: chainId });
-			invariant(data.data.results !== undefined, "Error parsing response");
-			return data.data.results.map(parseBackendStrategiesResponse) ?? [];
+			invariant(data.results !== undefined, "Error parsing response");
+			return data.results.map(parseBackendStrategiesResponse) ?? [];
 		},
 		proposalsByStrategy: async (
 			strategyId: string,
@@ -42,8 +42,8 @@ export const API: IServerAPI = {
 			const data: listProposalsResponse = await listProposals({
 				relatedThesisId: strategyId,
 			});
-			invariant(data.data.results !== undefined, "Error parsing response");
-			return data.data.results.map(parseBackendProposalResponse) ?? [];
+			invariant(data.results !== undefined, "Error parsing response");
+			return data.results.map(parseBackendProposalResponse) ?? [];
 		},
 		getAssetUsdUnitPrice: async (asset: BaseAsset) => {
 			const assetPrice = await fetchAssetPrice(
@@ -51,11 +51,11 @@ export const API: IServerAPI = {
 				asset.address,
 				"null",
 			);
-			if (!assetPrice.data.best_price?.price.usd_amount) {
+			if (!assetPrice.best_price?.price.usd_amount) {
 				throw new Error("No price found for asset");
 			}
 			const amount =
-				+assetPrice.data.best_price.price.usd_amount * 10 ** asset.decimals;
+				+assetPrice.best_price.price.usd_amount * 10 ** asset.decimals;
 			return BigInt(amount);
 		},
 		recentNonce: async (
@@ -68,8 +68,8 @@ export const API: IServerAPI = {
 				userAddress,
 			);
 			return [
-				BigInt(data.data.freeUserNonces[0]),
-				BigInt(data.data.freeUserNonceSpace),
+				BigInt(data.freeUserNonces[0]),
+				BigInt(data.freeUserNonceSpace),
 			];
 		},
 	},
@@ -97,7 +97,7 @@ export const API: IServerAPI = {
 					nonce_count_to_reserve: Number(nonce),
 				},
 			);
-			return data.data;
+			return data;
 		},
 	},
 };
