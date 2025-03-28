@@ -1,6 +1,6 @@
 {
   "name": "@pwndao/v1-core",
-  "version": "0.0.1-beta.0",
+  "version": "0.0.1-beta.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -19,8 +19,8 @@
   ],
   "dependencies": {
     "@openzeppelin/merkle-tree": "^1.0.8",
-    "@pwndao/api-sdk": "workspace:*",
-    "@pwndao/sdk-core": "workspace:*",
+    "@pwndao/api-sdk": "0.0.1-beta.1",
+    "@pwndao/sdk-core": "0.0.1-beta.1",
     "@wagmi/cli": "^2.2.0",
     "@wagmi/core": "^2.16.7",
     "abitype": "^1.0.8",
