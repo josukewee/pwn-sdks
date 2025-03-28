@@ -36,7 +36,7 @@ export const customInstance = async <T>(
 	}: {
 		method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 		headers?: Record<string, string>;
-		body?: unknown;
+		body?: RequestInit["body"];
 		params?: Record<string, string>;
 	},
 ): Promise<T> => {
@@ -50,7 +50,7 @@ export const customInstance = async <T>(
 	const response = await fetch(targetUrl, {
 		method,
 		headers,
-		...(body ? { body: JSON.stringify(body) } : {}),
+		body,
 	});
 
 	return response.json();
