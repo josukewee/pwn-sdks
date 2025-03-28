@@ -1,6 +1,6 @@
 {
   "name": "@pwndao/sdk-v1-react",
-  "version": "0.0.1-alpha.13",
+  "version": "0.0.1-beta.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -38,8 +38,8 @@
     "!**/*.tsbuildinfo"
   ],
   "dependencies": {
-    "@pwndao/sdk-core": "workspace:*",
-    "@pwndao/v1-core": "workspace:*",
+    "@pwndao/sdk-core": "0.0.1-beta.1",
+    "@pwndao/v1-core": "0.0.1-beta.1",
     "vitest": "^1.3.1",
     "wagmi": "^2.14.13"
   },
