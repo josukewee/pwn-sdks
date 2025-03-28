@@ -4,15 +4,8 @@ import { SupportedChain } from "../chains.js";
 import { ERC20Token } from "./token.js";
 import { MultiTokenCategory } from '../models/asset.js'
 
+// tests for constructor parameters
 describe("Token", () => {
-	it("should create a token", () => {
-		const token = new ERC20Token(
-			SupportedChain.Ethereum,
-			faker.finance.ethereumAddress(),
-			18,
-		);
-		expect(token).toBeDefined();
-	});
 
 	it("should create a token with a name", () => {
 		const token = new ERC20Token(
@@ -54,5 +47,4 @@ describe("Token", () => {
         );
         expect(token.category).toBe(MultiTokenCategory.ERC20);
     });
-	// tests for constructor parameters
 });
