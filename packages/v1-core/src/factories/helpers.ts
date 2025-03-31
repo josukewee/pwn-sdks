@@ -67,15 +67,17 @@ export const getLendingCommonProposalFields = async (
 
 	const proposerSpecHash = await deps.loanContract.getLenderSpecHash(
 		{
-			sourceOfFunds: isPoolToken(credit) ? credit.underlyingAddress : user.address,
+			sourceOfFunds: isPoolToken(credit) ? credit.address : user.address,
 		},
 		params.collateral.chainId,
 	);
 
+	const creditAddress = isPoolToken(credit) ? credit.underlyingAddress : credit.address;
+
 	const aprValue =
 		(typeof apr !== "number" &&
 			apr[
-				`${collateral.address}/${collateral.chainId}-${credit.address}/${credit.chainId}`
+				`${collateral.address}/${collateral.chainId}-${creditAddress}/${credit.chainId}`
 			]) ||
 		(apr as number);
 
@@ -92,7 +94,7 @@ export const getLendingCommonProposalFields = async (
 		checkCollateralStateFingerprint: false,
 		collateralStateFingerprint: ZERO_FINGERPRINT,
 
-		creditAddress: credit.address,
+		creditAddress,
 		availableCreditLimit: creditAmount,
 
 		utilizedCreditId,

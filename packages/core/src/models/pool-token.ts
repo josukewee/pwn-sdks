@@ -2,7 +2,7 @@ import type { SupportedChain } from "../chains.js";
 import type { AddressString } from "../types.js";
 import { ERC20Token } from "./token.js";
 
-enum SupportedProtocol {
+export enum SupportedProtocol {
 	AAVE = "aave",
 	MORPHO = "morpho",
 	Compound = "compound",

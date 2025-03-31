@@ -8,18 +8,20 @@ import {
 } from "@pwndao/sdk-core";
 import {
 	generateAddress,
+	getMockPoolToken,
 	getMockToken,
 	getMockUserWithNonceManager,
 } from "@pwndao/sdk-core";
-import { ProposalType } from "../models/proposals/proposal-base.js";
-import { makeProposal } from "./make-proposal.js";
-import { ChainLinkProposal } from "../models/proposals/chainlink-proposal.js";
-import { convertNameIntoDenominator } from "../utils/chainlink-feeds.js";
 import { LBTC, PYUSD } from "../addresses.js";
+import { ChainLinkProposal } from "../models/proposals/chainlink-proposal.js";
+import { ProposalType } from "../models/proposals/proposal-base.js";
+import { convertNameIntoDenominator } from "../utils/chainlink-feeds.js";
+import { makeProposal } from "./make-proposal.js";
+import { SupportedProtocol } from "@pwndao/sdk-core";
 
 describe("Test make proposal", () => {
-	const collateralAddress = LBTC[SupportedChain.Ethereum] as AddressString
-	const creditAddress = PYUSD[SupportedChain.Ethereum] as AddressString
+	const collateralAddress = LBTC[SupportedChain.Ethereum] as AddressString;
+	const creditAddress = PYUSD[SupportedChain.Ethereum] as AddressString;
 
 	const user_address = generateAddress();
 	const date = new Date("2025-02-01T00:00:00.000Z");
@@ -46,14 +48,17 @@ describe("Test make proposal", () => {
 
 	it("should assemble elastic proposal", async () => {
 		const contractMock = {
-			createProposal: vi.fn().mockImplementation((p) => p)
+			createProposal: vi.fn().mockImplementation((p) => p),
+			getCollateralAmount: vi.fn().mockImplementation(() => 0n),
+			createOnChainProposal: vi.fn().mockImplementation((p) => p),
+			getProposalHash: vi.fn().mockImplementation(() => "0x123"),
 		};
 
 		const loanContractMock = {
 			getLenderSpecHash: vi
-			.fn()
-			.mockImplementation(() => Promise.resolve(proposerSpecHash)),
-		}
+				.fn()
+				.mockImplementation(() => Promise.resolve(proposerSpecHash)),
+		};
 
 		const proposal = await makeProposal<ProposalType.Elastic>(
 			ProposalType.Elastic,
@@ -78,7 +83,7 @@ describe("Test make proposal", () => {
 				utilizedCreditId: generateAddress(), // Utilized credit is essentialy 32 bytes
 				minCreditAmountPercentage: 3,
 				relatedStrategyId: "1",
-				isOffer: true
+				isOffer: true,
 			},
 			{
 				api: {
@@ -133,13 +138,16 @@ describe("Test make proposal", () => {
 	it("should assemble elastic chainlink proposal", async () => {
 		const contractMock = {
 			createProposal: vi.fn().mockImplementation((p) => p),
+			getCollateralAmount: vi.fn().mockImplementation(() => 0n),
+			createOnChainProposal: vi.fn().mockImplementation((p) => p),
+			getProposalHash: vi.fn().mockImplementation(() => "0x123"),
 		};
 
 		const loanContractMock = {
 			getLenderSpecHash: vi
-			.fn()
-			.mockImplementation(() => Promise.resolve(proposerSpecHash)),
-		}
+				.fn()
+				.mockImplementation(() => Promise.resolve(proposerSpecHash)),
+		};
 
 		const proposal = await makeProposal<ProposalType.ChainLink>(
 			ProposalType.ChainLink,
@@ -164,7 +172,7 @@ describe("Test make proposal", () => {
 				utilizedCreditId: generateAddress(), // Utilized credit is essentialy 32 bytes
 				minCreditAmountPercentage: 3,
 				relatedStrategyId: "1",
-				isOffer: true
+				isOffer: true,
 			},
 			{
 				api: {
@@ -192,15 +200,19 @@ describe("Test make proposal", () => {
 			throw new Error("Proposal is not a ChainLinkProposal");
 		}
 
-		expect(proposal.feedIntermediaryDenominations).toHaveLength(2)
-		expect(proposal.feedInvertFlags).toHaveLength(3)
+		expect(proposal.feedIntermediaryDenominations).toHaveLength(2);
+		expect(proposal.feedInvertFlags).toHaveLength(3);
 
-		expect(proposal.feedIntermediaryDenominations[0]).toBe(convertNameIntoDenominator("USD"))
-		expect(proposal.feedIntermediaryDenominations[1]).toBe(convertNameIntoDenominator("BTC"))
+		expect(proposal.feedIntermediaryDenominations[0]).toBe(
+			convertNameIntoDenominator("USD"),
+		);
+		expect(proposal.feedIntermediaryDenominations[1]).toBe(
+			convertNameIntoDenominator("BTC"),
+		);
 
-		expect(proposal.feedInvertFlags[0]).toBe(false)
-		expect(proposal.feedInvertFlags[1]).toBe(true)
-		expect(proposal.feedInvertFlags[2]).toBe(true)
+		expect(proposal.feedInvertFlags[0]).toBe(false);
+		expect(proposal.feedInvertFlags[1]).toBe(true);
+		expect(proposal.feedInvertFlags[2]).toBe(true);
 
 		expect(proposal.proposerSpecHash).toBe(proposerSpecHash);
 		expect(proposal.collateralAddress).toBe(collateralAddress);
@@ -229,5 +241,79 @@ describe("Test make proposal", () => {
 			getLoanContractAddress(SupportedChain.Ethereum),
 		);
 		expect(proposal.relatedStrategyId).toBe("1");
+	});
+
+	it("should assemble elastic proposal with token that has underlyingAddress property", async () => {
+		const contractMock = {
+			createProposal: vi.fn().mockImplementation((p) => p),
+			getCollateralAmount: vi.fn().mockImplementation(() => 0n),
+			createOnChainProposal: vi.fn().mockImplementation((p) => p),
+			getProposalHash: vi.fn().mockImplementation(() => "0x123"),
+		};
+
+		const poolTokenAddress = generateAddress();
+
+		const loanContractMock = {
+			getLenderSpecHash: vi
+				.fn()
+				.mockImplementation(() => Promise.resolve(proposerSpecHash)),
+		};
+
+		const credit = getMockPoolToken(creditAddress, SupportedProtocol.AAVE, SupportedChain.Ethereum, poolTokenAddress);
+
+		const proposal = await makeProposal<ProposalType.Elastic>(
+			ProposalType.Elastic,
+			{
+				collateral: getMockToken(SupportedChain.Ethereum, collateralAddress),
+				user: getMockUserWithNonceManager(user_address),
+				credit,
+				creditAmount,
+				ltv: {
+					[`${collateralAddress}/${SupportedChain.Ethereum}-${creditAddress}/${SupportedChain.Ethereum}`]:
+						Number(ltv),
+				},
+				apr: {
+					[`${collateralAddress}/${SupportedChain.Ethereum}-${creditAddress}/${SupportedChain.Ethereum}`]:
+						apr,
+				},
+				duration: {
+					days: durationDays,
+					date: undefined,
+				},
+				expirationDays,
+				utilizedCreditId: generateAddress(),
+				minCreditAmountPercentage: 3,
+				relatedStrategyId: "1",
+				isOffer: true,
+			},
+			{
+				api: {
+					getAssetUsdUnitPrice: async () => 1000000000000000000n,
+					persistProposal: vi.fn().mockImplementation((p) => p),
+					persistProposals: vi.fn().mockImplementation((p) => p),
+					updateNonces: vi.fn().mockImplementation((p) => p),
+				},
+				contract: contractMock,
+				loanContract: loanContractMock,
+			},
+		);
+
+		// Verify the proposal is created correctly
+		expect(contractMock.createProposal).toHaveBeenCalled();
+		expect(loanContractMock.getLenderSpecHash).toHaveBeenCalled();
+		// It should use underlyingAddress instead of user_address when calling getLenderSpecHash
+		expect(loanContractMock.getLenderSpecHash).toHaveBeenCalledWith(
+			{
+				sourceOfFunds: poolTokenAddress,
+			},
+			SupportedChain.Ethereum,
+		);
+
+		expect(proposal).toBeDefined();
+		expect(proposal.proposerSpecHash).toBe(proposerSpecHash);
+		expect(proposal.collateralAddress).toBe(collateralAddress);
+		expect(proposal.creditAddress).toBe(creditAddress);
+		expect(proposal.availableCreditLimit).toBe(1n * 10n ** 18n);
+		expect(proposal.minCreditAmount).toBe(3n * 10n ** (18n - 2n)); // 3% of credit amount
 	});
 });

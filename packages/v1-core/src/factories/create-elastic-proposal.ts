@@ -1,6 +1,6 @@
 import type { AddressString, UserWithNonceManager } from "@pwndao/sdk-core";
 import type { Hex } from "@pwndao/sdk-core";
-import { getLoanContractAddress } from "@pwndao/sdk-core";
+import { getLoanContractAddress, getUniqueCreditCollateralKey, isPoolToken } from "@pwndao/sdk-core";
 import { ElasticProposal } from "../models/proposals/elastic-proposal.js";
 import type { IElasticProposalBase } from "../models/proposals/proposal-base.js";
 import type {
@@ -74,10 +74,12 @@ export class ElasticProposalStrategy
 		const minCreditAmountUsd =
 			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(100);
 
+		const creditAddress = isPoolToken(params.credit) ? params.credit.underlyingAddress : params.credit.address;
+
 		const ltv =
 			typeof params.ltv === 'object' 
 				? params.ltv[
-					`${params.collateral.address}/${params.collateral.chainId}-${params.credit.address}/${params.credit.chainId}`
+					`${params.collateral.address}/${params.collateral.chainId}-${creditAddress}/${params.credit.chainId}`
 				] ?? 0
 				: params.ltv;
 
