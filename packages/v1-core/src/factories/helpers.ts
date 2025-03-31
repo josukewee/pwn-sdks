@@ -5,7 +5,7 @@ import type {
 	Token,
 	UserWithNonceManager,
 } from "@pwndao/sdk-core";
-import { ZERO_ADDRESS, ZERO_FINGERPRINT } from "@pwndao/sdk-core";
+import { isPoolToken, ZERO_ADDRESS, ZERO_FINGERPRINT } from "@pwndao/sdk-core";
 import type {
 	ICommonProposalFields,
 	IProposalMisc,
@@ -67,7 +67,7 @@ export const getLendingCommonProposalFields = async (
 
 	const proposerSpecHash = await deps.loanContract.getLenderSpecHash(
 		{
-			sourceOfFunds: user.address,
+			sourceOfFunds: isPoolToken(credit) ? credit.underlyingAddress : user.address,
 		},
 		params.collateral.chainId,
 	);

@@ -1,5 +1,6 @@
 import type {
 	AddressString,
+	ERC20TokenLike,
 	Hex,
 	SupportedChain,
 	Token,
@@ -15,7 +16,7 @@ import type {
 import type { ProposalType } from "../proposals/proposal-base.js";
 
 export interface StrategyTerm {
-	creditAssets: Token[];
+	creditAssets: ERC20TokenLike[];
 	collateralAssets: Token[];
 	apr: Record<string, number>;
 	ltv: Record<string, number>;
