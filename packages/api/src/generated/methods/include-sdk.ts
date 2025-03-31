@@ -19,7 +19,6 @@ import type {
 	FetchUserNftsParams,
 	FreeUserNonceRetrieveParams,
 	FreeUserNonceSchemaWorkaround,
-	ListProposalsParams,
 	LoanDetailSchemaWorkaround,
 	MarkAsSeenBodyRequest,
 	NFTAssetCollectionDetailSchema,
@@ -33,6 +32,7 @@ import type {
 	ProposalAndLoanListParams,
 	ProposalDetailSchema,
 	ProposalHashesListSchema,
+	ProposalListParams,
 	ThesisCreateUpdateSchemaRequest,
 	ThesisDetail2Params,
 	ThesisDetailParams,
@@ -684,7 +684,7 @@ export const proposalDetail = async (
 	});
 };
 
-export const getListProposalsUrl = (params?: ListProposalsParams) => {
+export const getProposalListUrl = (params?: ProposalListParams) => {
 	const normalizedParams = new URLSearchParams();
 
 	Object.entries(params || {}).forEach(([key, value]) => {
@@ -709,12 +709,12 @@ export const getListProposalsUrl = (params?: ListProposalsParams) => {
 		: "/api/v2/pwn_contracts/proposals/";
 };
 
-export const listProposals = async (
-	params?: ListProposalsParams,
+export const proposalList = async (
+	params?: ProposalListParams,
 	options?: RequestInit,
 ): Promise<PaginatedProposalDetailSchemaList> => {
 	return customInstance<PaginatedProposalDetailSchemaList>(
-		getListProposalsUrl(params),
+		getProposalListUrl(params),
 		{
 			...options,
 			method: "GET",

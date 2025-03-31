@@ -1,7 +1,7 @@
 import {
 	fetchAssetPrice,
 	freeUserNonceRetrieve,
-	listProposals,
+	proposalList,
 	proposalCreate,
 	proposalCreateBatch,
 	thesisDetail,
@@ -39,7 +39,7 @@ export const API: IServerAPI = {
 		proposalsByStrategy: async (
 			strategyId: string,
 		): Promise<ProposalWithSignature[]> => {
-			const data = await listProposals({
+			const data = await proposalList({
 				relatedThesisId: strategyId,
 			});
 			invariant(data.results !== undefined, "Error parsing response");

@@ -1017,7 +1017,7 @@ paths:
           description: ''
   /api/v2/pwn_contracts/proposals/:
     get:
-      operationId: listProposals
+      operationId: proposalList
       parameters:
       - in: query
         name: apr_max

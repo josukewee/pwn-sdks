@@ -1285,3 +1285,7 @@ export * from "./wallet-stats-value-breakdown-total";
 export * from "./web3-token-obtain-pair";
 export * from "./web3-token-obtain-pair-request";
 export * from "./web3auth-curator-groups-list-params";
+export * from "./proposal-list-chains-item";
+export * from "./proposal-list-collateral-type";
+export * from "./proposal-list-params";
+export * from "./proposal-list-statuses-item";
