@@ -20,6 +20,7 @@ export * from "./views/get-strategy.js";
 export * from "./actions/make-proposal.js";
 export * from "./actions/make-proposals.js";
 export * from "./actions/revoke-proposals.js";
+export * from "./actions/types.js";
 
 export * from "./generated.js";
 export * from "./utils/index.js";

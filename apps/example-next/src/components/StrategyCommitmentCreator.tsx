@@ -10,17 +10,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMakeProposals, useUserWithNonce } from "@pwndao/sdk-v1-react";
-import {
-	ElasticProposalContract,
-	type IProposalElasticAPIDeps,
-	ImplementedProposalTypes,
-	ProposalParamWithDeps,
-	SimpleLoanContract,
-	type Strategy,
-	createUtilizedCreditId,
-} from "@pwndao/v1-core";
-import { API } from "@pwndao/v1-core";
-import { ProposalType } from "@pwndao/v1-core";
+import type { ImplementedProposalTypes, ProposalParamWithDeps, Strategy } from "@pwndao/v1-core";
+import { createElasticProposals } from "@pwndao/v1-core";
 import { serialize } from "@wagmi/core";
 import { useState } from "react";
 import { useAccount, useConfig, useConnect, useDisconnect } from "wagmi";
@@ -62,45 +53,15 @@ export default function StrategyCommitmentCreator({
 			return;
 		}
 
-		const proposalsToCreate: ProposalParamWithDeps<ImplementedProposalTypes>[] = []
+		let proposalsToCreate: ProposalParamWithDeps<ImplementedProposalTypes>[] = []
 
-		// TODO extend this example also for combined creation of elastic and chainlink proposals at once
-		for (const creditAsset of strategy.terms.creditAssets) {
-		  for (const collateralAsset of strategy.terms.collateralAssets) {
-			proposalsToCreate.push({
-			  type: ProposalType.Elastic,
-			  deps: {
-				api: {
-				  persistProposal: API.post.persistProposal,
-				  getAssetUsdUnitPrice: API.get.getAssetUsdUnitPrice,
-				  persistProposals: API.post.persistProposals,
-				  updateNonces: API.post.updateNonce,
-				} as IProposalElasticAPIDeps,
-				contract: new ElasticProposalContract(config),
-				loanContract: new SimpleLoanContract(config),
-			  },
-			  params: {
-				user: user,
-				creditAmount: BigInt(creditAmount),
-				ltv: strategy.terms.ltv,
-				apr: strategy.terms.apr,
-				duration: {
-				  days: strategy.terms.durationDays,
-				},
-				expirationDays: strategy.terms.expirationDays,
-				utilizedCreditId: createUtilizedCreditId({
-				  proposer: address,
-				  availableCreditLimit: BigInt(creditAmount),
-				}),
-				minCreditAmountPercentage: strategy.terms.minCreditAmountPercentage,
-				isOffer: true,
-				relatedStrategyId: strategy.id,
-				collateral: collateralAsset,
-				credit: creditAsset,
-			  }
-			})
-		  }
-		}
+		proposalsToCreate = createElasticProposals(
+			strategy,
+			user,
+			address,
+			creditAmount,
+			config
+		);
 
 		try {
 			const res = await makeProposal(proposalsToCreate)

@@ -15,8 +15,7 @@
     "typescript-eslint": "^8.26.1",
     "viem": "^2.23.6",
     "vue": "^3.4.0",
-    "vue-router": "^4.2.0",
-    "wagmi": "^2.14.13"
+    "vue-router": "^4.2.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -1,7 +1,8 @@
 import type { BaseTerm, IServerAPI } from './types.js';
-import type { IOracleProposalBase } from '../models/proposals/proposal-base.js';
+import { ProposalType, type IOracleProposalBase } from '../models/proposals/proposal-base.js';
 import type {
   IProposalStrategy,
+  Strategy,
   StrategyTerm,
 } from '../models/strategies/types.js';
 import {
@@ -9,14 +10,20 @@ import {
   type ILoanContract,
 } from './helpers.js';
 import type {
+  AddressString,
   Hex,
   UserWithNonceManager,
 } from '@pwndao/sdk-core';
 import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
 import { getLoanContractAddress } from '@pwndao/sdk-core';
-import type { IProposalChainLinkContract } from 'src/contracts/chain-link-proposal-contract.js';
+import { ChainLinkProposalContract, type IProposalChainLinkContract } from '../contracts/chain-link-proposal-contract.js';
 import { type ChainsWithChainLinkFeedSupport, getFeedData } from '../utils/chainlink-feeds.js';
 import invariant from 'ts-invariant';
+import type { Config } from '@wagmi/core';
+import { SimpleLoanContract } from '../contracts/simple-loan-contract.js';
+import { createUtilizedCreditId } from '../utils/shared-credit.js';
+import type { ImplementedProposalTypes, ProposalParamWithDeps } from '../actions/types.js';
+import { API } from '../api.js';
 
 export type CreateChainLinkElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
@@ -214,42 +221,52 @@ export const createChainLinkElasticProposal = async (
  */
 export type CreateChainLinkElasticProposalBatchParams = CreateChainLinkElasticProposalParams[];
 
-/**
- * Creates multiple elastic proposals in a batch
- *
- * @param params - The parameters for the batch of proposals
- * @param deps - RPC interface and contract
- * @returns Array of created elastic proposals
- */
-// TODO do we even need this? or is it enough to handle batches inside of makeProposals?
-// export const createChainLinkElasticProposalBatch = async (
-//   params: CreateChainLinkElasticProposalBatchParams,
-//   deps: ChainLinkElasticProposalDeps
-// ): Promise<ChainLinkProposal[]> => {
-//   // Create a strategy term with the batch parameters
-//   const dummyTerm: StrategyTerm = {
-//     creditAssets: params.creditAssets,
-//     collateralAssets: params.collateralAssets,
-//     apr: params.terms.apr,
-//     durationDays: params.terms.duration.days || 0,
-//     ltv: params.terms.ltv,
-//     expirationDays: params.terms.expirationDays,
-//     minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
-//     relatedStrategyId: params.terms.relatedStrategyId
-//   };
+export const createChainLinkProposals = (
+  strategy: Strategy,
+  user: UserWithNonceManager,
+  address: AddressString,
+  creditAmount: string,
+  config: Config
+) => {
+	const proposals: ProposalParamWithDeps<ImplementedProposalTypes>[] = [];
 
-//   // Create a strategy and generate all proposals
-//   const strategy = new ChainLinkProposalStrategy(
-//     dummyTerm,
-//     deps.contract,
-//     deps.loanContract,
-//   );
-//   const proposals = await strategy.createLendingProposals(
-//     params.terms.user,
-//     params.terms.creditAmount,
-//     params.terms.utilizedCreditId,
-//     params.terms.isOffer,
-//   );
+  const apiDeps = {
+    persistProposal: API.post.persistProposal,
+    persistProposals: API.post.persistProposals,
+    updateNonces: API.post.updateNonce,
+  } as IProposalChainLinkAPIDeps;
 
-//   return proposals;
-// };
+	for (const creditAsset of strategy.terms.creditAssets) {
+		const utilizedCreditId = createUtilizedCreditId({
+			proposer: address,
+			availableCreditLimit: BigInt(creditAmount),
+		});
+		
+		for (const collateralAsset of strategy.terms.collateralAssets) {
+			proposals.push({
+				type: ProposalType.ChainLink,
+				deps: {
+					api: apiDeps,
+					contract: new ChainLinkProposalContract(config),
+					loanContract: new SimpleLoanContract(config),
+				},
+				params: {
+					user: user,
+					creditAmount: BigInt(creditAmount),
+					ltv: strategy.terms.ltv,
+					apr: strategy.terms.apr,
+					duration: {
+						days: strategy.terms.durationDays,
+					},
+					expirationDays: strategy.terms.expirationDays,
+					utilizedCreditId: utilizedCreditId,
+					minCreditAmountPercentage: strategy.terms.minCreditAmountPercentage,
+					isOffer: true,
+					relatedStrategyId: strategy.id,
+					collateral: collateralAsset,
+					credit: creditAsset,
+				}
+			});
+		}
+	}
+}

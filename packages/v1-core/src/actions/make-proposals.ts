@@ -10,27 +10,7 @@ import { createChainLinkElasticProposal } from "../factories/create-chain-link-p
 import type { ChainLinkElasticProposalDeps } from "../factories/create-chain-link-proposal.js";
 import { createMultiProposal } from "../contracts/multi-proposal.js";
 import type { Config } from "@wagmi/core";
-
-const proposalTypes = {
-	[ProposalType.Elastic]: createElasticProposal,
-	[ProposalType.ChainLink]: createChainLinkElasticProposal,
-	[ProposalType.DutchAuction]: () => {
-		throw new Error("Not implemented");
-	},
-	[ProposalType.Simple]: () => {
-		throw new Error("Not implemented");
-	},
-};
-
-export type ImplementedProposalTypes = {
-	[K in ProposalType]: typeof proposalTypes[K] extends () => never ? never : K
-  }[ProposalType];
-
-export type ProposalParamWithDeps<T extends ImplementedProposalTypes> = {
-    type: T;
-    params: NonNullable<Parameters<(typeof proposalTypes)[T]>[0]>;
-    deps: NonNullable<Parameters<(typeof proposalTypes)[T]>[1]>;
-};
+import type { ImplementedProposalTypes, ProposalParamWithDeps } from "./types.js";
 
 export const makeProposals = async <T extends ImplementedProposalTypes>(
 	config: Config,
