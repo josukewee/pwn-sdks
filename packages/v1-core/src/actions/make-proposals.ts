@@ -19,7 +19,7 @@ export const makeProposals = async <T extends ImplementedProposalTypes>(
 	invariant(config, "Config is required");
 	invariant(proposalParams?.length > 0, "Proposal params are required");
 
-	const proposals: Array<ProposalWithHash> = [];
+	const proposals: ProposalWithHash[] = [];
 
 	for (const proposalParam of proposalParams) {
 		switch (proposalParam.type) {
@@ -56,20 +56,22 @@ export const makeProposals = async <T extends ImplementedProposalTypes>(
 	}
 
 	const proposalsWithSignature = await createMultiProposal(config, proposals);
+	const deps = proposalParams[0].deps;
+	const noncesIssuer = proposalParams[0].params.user;
 
-	const usedNonces = proposalParams[0].params.user.getUsedNonces();
+	const usedNonces = noncesIssuer.getUsedNonces();
 	for (const chain in usedNonces) {
 		const _chain = Number(chain) as SupportedChain;
 		if (!usedNonces[_chain]) continue;
 
-		await proposalParams[0].deps.api.updateNonces(
-			proposalParams[0].params.user.address,
+		await deps.api.updateNonces(
+			noncesIssuer.address,
 			_chain,
 			usedNonces[_chain],
 		);
 	}
 
-	await proposalParams[0].deps.api.persistProposals(proposalsWithSignature);
+	await deps.api.persistProposals(proposalsWithSignature);
 
 	return proposalsWithSignature;
 };
