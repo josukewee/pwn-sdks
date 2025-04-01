@@ -1,28 +1,35 @@
 import type { AddressString, UserWithNonceManager } from "@pwndao/sdk-core";
 import type { Hex } from "@pwndao/sdk-core";
-import { getLoanContractAddress, getUniqueCreditCollateralKey, isPoolToken } from "@pwndao/sdk-core";
+import {
+	getLoanContractAddress,
+	getUniqueCreditCollateralKey,
+} from "@pwndao/sdk-core";
+import type { Config } from "@wagmi/core";
+import invariant from "ts-invariant";
+import type {
+	ImplementedProposalTypes,
+	ProposalParamWithDeps,
+} from "../actions/types.js";
+import { API } from "../api.js";
+import type { IProposalElasticContract } from "../contracts/elastic-proposal-contract.js";
+import { ElasticProposalContract } from "../contracts/elastic-proposal-contract.js";
+import { SimpleLoanContract } from "../contracts/simple-loan-contract.js";
 import { ElasticProposal } from "../models/proposals/elastic-proposal.js";
 import type { IElasticProposalBase } from "../models/proposals/proposal-base.js";
+import { ProposalType } from "../models/proposals/proposal-base.js";
 import type {
 	IProposalStrategy,
 	Strategy,
 	StrategyTerm,
 } from "../models/strategies/types.js";
 import { calculateCreditPerCollateralUnit } from "../utils/calculations.js";
+import { createUtilizedCreditId } from "../utils/shared-credit.js";
+import { LTV_DENOMINATOR } from "./constants.js";
 import {
-	getLendingCommonProposalFields,
 	type ILoanContract,
+	getLendingCommonProposalFields,
 } from "./helpers.js";
 import type { BaseTerm, IServerAPI } from "./types.js";
-import type { IProposalElasticContract } from "../contracts/elastic-proposal-contract.js";
-import { LTV_DENOMINATOR } from "./constants.js";
-import { API } from "../api.js";
-import type { ProposalParamWithDeps, ImplementedProposalTypes } from "../actions/types.js";
-import { ProposalType } from "../models/proposals/proposal-base.js";
-import { ElasticProposalContract } from "../contracts/elastic-proposal-contract.js";
-import { SimpleLoanContract } from "../contracts/simple-loan-contract.js";
-import { createUtilizedCreditId } from "../utils/shared-credit.js";
-import type { Config } from "@wagmi/core";
 
 export type CreateElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
@@ -72,19 +79,21 @@ export class ElasticProposalStrategy
 			(params.creditAmount * creditUsdPrice) /
 			BigInt(10 ** params.credit.decimals);
 		const minCreditAmountUsd =
-			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(100);
-
-		const creditAddress = isPoolToken(params.credit) ? params.credit.underlyingAddress : params.credit.address;
+			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) /
+			BigInt(100);
 
 		const ltv =
-			typeof params.ltv === 'object' 
-				? params.ltv[
-					`${params.collateral.address}/${params.collateral.chainId}-${creditAddress}/${params.credit.chainId}`
-				] ?? 0
+			typeof params.ltv === "object"
+				? params.ltv?.[
+						getUniqueCreditCollateralKey(params.credit, params.collateral)
+					]
 				: params.ltv;
 
+		invariant(ltv, "LTV is undefined");
+
 		// Apply LTV ratio
-		const collateralAmountUsd = (creditAmountUsd * BigInt(LTV_DENOMINATOR)) / BigInt(ltv);
+		const collateralAmountUsd =
+			(creditAmountUsd * BigInt(LTV_DENOMINATOR)) / BigInt(ltv);
 
 		// Convert back to collateral tokens
 		const collateralAmount =
@@ -124,7 +133,7 @@ export class ElasticProposalStrategy
 				minCreditAmount: minCreditAmountUsd,
 				availableCreditLimit: params.creditAmount,
 				chainId: params.collateral.chainId,
-				isOffer: params.isOffer
+				isOffer: params.isOffer,
 			},
 			params.collateral.chainId,
 		);
@@ -164,7 +173,7 @@ export class ElasticProposalStrategy
 					expirationDays: this.term.expirationDays,
 					minCreditAmountPercentage: this.term.minCreditAmountPercentage,
 					relatedStrategyId: this.term.relatedStrategyId,
-					isOffer
+					isOffer,
 				});
 			}
 		}
@@ -275,23 +284,23 @@ export const createElasticProposals = (
 	user: UserWithNonceManager,
 	address: AddressString,
 	creditAmount: string,
-	config: Config
+	config: Config,
 ): ProposalParamWithDeps<ImplementedProposalTypes>[] => {
 	const proposals: ProposalParamWithDeps<ImplementedProposalTypes>[] = [];
-	
+
 	const apiDeps = {
 		persistProposal: API.post.persistProposal,
 		getAssetUsdUnitPrice: API.get.getAssetUsdUnitPrice,
 		persistProposals: API.post.persistProposals,
 		updateNonces: API.post.updateNonce,
 	} as IProposalElasticAPIDeps;
-	
+
 	for (const creditAsset of strategy.terms.creditAssets) {
 		const utilizedCreditId = createUtilizedCreditId({
 			proposer: address,
 			availableCreditLimit: BigInt(creditAmount),
 		});
-		
+
 		for (const collateralAsset of strategy.terms.collateralAssets) {
 			proposals.push({
 				type: ProposalType.Elastic,
@@ -315,10 +324,10 @@ export const createElasticProposals = (
 					relatedStrategyId: strategy.id,
 					collateral: collateralAsset,
 					credit: creditAsset,
-				}
+				},
 			});
 		}
 	}
-	
+
 	return proposals;
 };

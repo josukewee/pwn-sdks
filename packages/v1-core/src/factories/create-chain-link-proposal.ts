@@ -15,7 +15,7 @@ import type {
   UserWithNonceManager,
 } from '@pwndao/sdk-core';
 import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
-import { getLoanContractAddress } from '@pwndao/sdk-core';
+import { getLoanContractAddress, getUniqueCreditCollateralKey } from '@pwndao/sdk-core';
 import { ChainLinkProposalContract, type IProposalChainLinkContract } from '../contracts/chain-link-proposal-contract.js';
 import { type ChainsWithChainLinkFeedSupport, getFeedData } from '../utils/chainlink-feeds.js';
 import invariant from 'ts-invariant';
@@ -24,6 +24,7 @@ import { SimpleLoanContract } from '../contracts/simple-loan-contract.js';
 import { createUtilizedCreditId } from '../utils/shared-credit.js';
 import type { ImplementedProposalTypes, ProposalParamWithDeps } from '../actions/types.js';
 import { API } from '../api.js';
+import { LTV_DENOMINATOR_MULTIPLIER } from './constants.js';
 
 export type CreateChainLinkElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
@@ -55,11 +56,12 @@ export class ChainLinkProposalStrategy
 
     const ltv =
       typeof params.ltv === 'object' 
-        ? params.ltv[
-          `${params.collateral.address}/${params.collateral.chainId}-${params.credit.address}/${params.credit.chainId}`
-        ] ?? 0
+        ? params.ltv?.[
+          getUniqueCreditCollateralKey(params.credit, params.collateral)
+        ]
         : params.ltv;
-
+    
+    invariant(ltv, "LTV is undefined");
 
     const feedData = getFeedData(params.collateral.chainId as ChainsWithChainLinkFeedSupport, params.collateral.address, params.credit.address)
     invariant(feedData, "We did not find a suitable price feed. Create classic elastic proposal instead.")
@@ -93,7 +95,7 @@ export class ChainLinkProposalStrategy
         ...commonFields,
         feedIntermediaryDenominations: feedData.feedIntermediaryDenominations,
         feedInvertFlags: feedData.feedInvertFlags,
-        loanToValue: BigInt(ltv),
+        loanToValue: BigInt(ltv * LTV_DENOMINATOR_MULTIPLIER),
         minCreditAmount,
         chainId: params.collateral.chainId,
       },
