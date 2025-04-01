@@ -5,7 +5,7 @@ import type {
 	Token,
 	UserWithNonceManager,
 } from "@pwndao/sdk-core";
-import { ZERO_ADDRESS, ZERO_FINGERPRINT } from "@pwndao/sdk-core";
+import { getUniqueCreditCollateralKey, isPoolToken, ZERO_ADDRESS, ZERO_FINGERPRINT } from "@pwndao/sdk-core";
 import type {
 	ICommonProposalFields,
 	IProposalMisc,
@@ -67,15 +67,17 @@ export const getLendingCommonProposalFields = async (
 
 	const proposerSpecHash = await deps.loanContract.getLenderSpecHash(
 		{
-			sourceOfFunds: user.address,
+			sourceOfFunds: isPoolToken(credit) ? credit.address : user.address,
 		},
 		params.collateral.chainId,
 	);
 
+	const creditAddress = isPoolToken(credit) ? credit.underlyingAddress : credit.address;
+
 	const aprValue =
 		(typeof apr !== "number" &&
 			apr[
-				`${collateral.address}/${collateral.chainId}-${credit.address}/${credit.chainId}`
+				getUniqueCreditCollateralKey(credit, collateral)
 			]) ||
 		(apr as number);
 
@@ -92,7 +94,7 @@ export const getLendingCommonProposalFields = async (
 		checkCollateralStateFingerprint: false,
 		collateralStateFingerprint: ZERO_FINGERPRINT,
 
-		creditAddress: credit.address,
+		creditAddress,
 		availableCreditLimit: creditAmount,
 
 		utilizedCreditId,
