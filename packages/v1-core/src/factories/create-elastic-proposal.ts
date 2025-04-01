@@ -23,8 +23,14 @@ import type {
 	StrategyTerm,
 } from "../models/strategies/types.js";
 import { calculateCreditPerCollateralUnit } from "../utils/calculations.js";
+import {
+	calculateCollateralAmount,
+	calculateDurationInSeconds,
+	calculateExpirationTimestamp,
+	calculateMinCreditAmount,
+	getLtvValue,
+} from "../utils/proposal-calculations.js";
 import { createUtilizedCreditId } from "../utils/shared-credit.js";
-import { LTV_DENOMINATOR } from "./constants.js";
 import {
 	type ILoanContract,
 	getLendingCommonProposalFields,
@@ -58,16 +64,10 @@ export class ElasticProposalStrategy
 		contract: IProposalElasticContract,
 	): Promise<ElasticProposal> {
 		// Calculate expiration timestamp
-		const expiration =
-			Math.floor(Date.now() / 1000) + params.expirationDays * 24 * 60 * 60;
+		const expiration = calculateExpirationTimestamp(params.expirationDays);
 
 		// Get duration in seconds or timestamp
-		let durationOrDate: number;
-		if (params.duration.days !== undefined) {
-			durationOrDate = params.duration.days * 24 * 60 * 60;
-		} else {
-			durationOrDate = Math.floor(params.duration.date.getTime() / 1000);
-		}
+		const durationOrDate = calculateDurationInSeconds(params.duration);
 
 		// Get collateral amount based on credit amount, LTV, and prices
 		const creditUsdPrice = await api.getAssetUsdUnitPrice(params.credit);
@@ -75,30 +75,30 @@ export class ElasticProposalStrategy
 			params.collateral,
 		);
 
-		const creditAmountUsd =
-			(params.creditAmount * creditUsdPrice) /
-			BigInt(10 ** params.credit.decimals);
-		const minCreditAmountUsd =
-			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) /
-			BigInt(100);
-
-		const ltv =
-			typeof params.ltv === "object"
-				? params.ltv?.[
-						getUniqueCreditCollateralKey(params.credit, params.collateral)
-					]
-				: params.ltv;
-
+		// Get LTV value for the credit-collateral pair
+		const ltv = getLtvValue(
+			params.ltv,
+			params.credit,
+			params.collateral,
+			getUniqueCreditCollateralKey,
+		);
 		invariant(ltv, "LTV is undefined");
 
-		// Apply LTV ratio
-		const collateralAmountUsd =
-			(creditAmountUsd * BigInt(LTV_DENOMINATOR)) / BigInt(ltv);
+		// Calculate the collateral amount using the shared utility
+		const collateralAmount = calculateCollateralAmount({
+			creditAmount: params.creditAmount,
+			ltv,
+			creditDecimals: params.credit.decimals,
+			collateralDecimals: params.collateral.decimals,
+			creditUsdPrice,
+			collateralUsdPrice,
+		});
 
-		// Convert back to collateral tokens
-		const collateralAmount =
-			(collateralAmountUsd * BigInt(10 ** params.collateral.decimals)) /
-			collateralUsdPrice;
+		// Calculate min credit amount using the shared utility
+		const minCreditAmount = calculateMinCreditAmount(
+			params.creditAmount,
+			params.minCreditAmountPercentage,
+		);
 
 		// Get common proposal fields
 		const commonFields = await getLendingCommonProposalFields(
@@ -130,7 +130,7 @@ export class ElasticProposalStrategy
 			{
 				...commonFields,
 				creditPerCollateralUnit: BigInt(creditPerCollateralUnit),
-				minCreditAmount: minCreditAmountUsd,
+				minCreditAmount: minCreditAmount,
 				availableCreditLimit: params.creditAmount,
 				chainId: params.collateral.chainId,
 				isOffer: params.isOffer,

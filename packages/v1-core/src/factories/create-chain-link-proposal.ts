@@ -24,7 +24,13 @@ import { SimpleLoanContract } from '../contracts/simple-loan-contract.js';
 import { createUtilizedCreditId } from '../utils/shared-credit.js';
 import type { ImplementedProposalTypes, ProposalParamWithDeps } from '../actions/types.js';
 import { API } from '../api.js';
-import { LTV_DENOMINATOR_MULTIPLIER } from './constants.js';
+import { 
+  calculateDurationInSeconds, 
+  calculateExpirationTimestamp, 
+  calculateMinCreditAmount, 
+  formatLtvForContract, 
+  getLtvValue 
+} from '../utils/proposal-calculations.js';
 
 export type CreateChainLinkElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
@@ -44,30 +50,22 @@ export class ChainLinkProposalStrategy
     contract: IProposalChainLinkContract
   ): Promise<ChainLinkProposal | undefined> {
     // Calculate expiration timestamp
-    const expiration = Math.floor(Date.now() / 1000) + params.expirationDays * 24 * 60 * 60;
+    const expiration = calculateExpirationTimestamp(params.expirationDays);
 
     // Get duration in seconds or timestamp
-    let durationOrDate: number;
-    if (params.duration.days !== undefined) {
-      durationOrDate = params.duration.days * 24 * 60 * 60;
-    } else {
-      durationOrDate = Math.floor(params.duration.date.getTime() / 1000);
-    }
+    const durationOrDate = calculateDurationInSeconds(params.duration);
 
-    const ltv =
-      typeof params.ltv === 'object' 
-        ? params.ltv?.[
-          getUniqueCreditCollateralKey(params.credit, params.collateral)
-        ]
-        : params.ltv;
+    // Get LTV value for the credit-collateral pair
+    const ltv = getLtvValue(params.ltv, params.credit, params.collateral, getUniqueCreditCollateralKey);
     
     invariant(ltv, "LTV is undefined");
 
-    const feedData = getFeedData(params.collateral.chainId as ChainsWithChainLinkFeedSupport, params.collateral.address, params.credit.address)
-    invariant(feedData, "We did not find a suitable price feed. Create classic elastic proposal instead.")
+    // Get feed data for ChainLink proposal
+    const feedData = getFeedData(params.collateral.chainId as ChainsWithChainLinkFeedSupport, params.collateral.address, params.credit.address);
+    invariant(feedData, "We did not find a suitable price feed. Create classic elastic proposal instead.");
 
-		const minCreditAmount =
-			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(100);
+    // Calculate min credit amount using the shared utility
+    const minCreditAmount = calculateMinCreditAmount(params.creditAmount, params.minCreditAmountPercentage);
 
     // Get common proposal fields
     const commonFields = await getLendingCommonProposalFields(
@@ -89,13 +87,13 @@ export class ChainLinkProposalStrategy
       }
     );
 
-    // Create and return the ChainLink proposal
+    // Create and return the ChainLink proposal with formatted LTV for contract
     return new ChainLinkProposal(
       {
         ...commonFields,
         feedIntermediaryDenominations: feedData.feedIntermediaryDenominations,
         feedInvertFlags: feedData.feedInvertFlags,
-        loanToValue: BigInt(ltv * LTV_DENOMINATOR_MULTIPLIER),
+        loanToValue: formatLtvForContract(ltv),
         minCreditAmount,
         chainId: params.collateral.chainId,
       },

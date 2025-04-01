@@ -5,6 +5,7 @@ import {
 	ZERO_ADDRESS,
 	ZERO_FINGERPRINT,
 	getLoanContractAddress,
+	getUniqueCreditCollateralKey,
 } from "@pwndao/sdk-core";
 import {
 	generateAddress,
@@ -68,11 +69,11 @@ describe("Test make proposal", () => {
 				credit: getMockToken(SupportedChain.Ethereum, creditAddress),
 				creditAmount,
 				ltv: {
-					[`${collateralAddress}/${SupportedChain.Ethereum}-${creditAddress}/${SupportedChain.Ethereum}`]:
+					[getUniqueCreditCollateralKey(getMockToken(SupportedChain.Ethereum, creditAddress), getMockToken(SupportedChain.Ethereum, collateralAddress))]:
 						Number(ltv),
 				},
 				apr: {
-					[`${collateralAddress}/${SupportedChain.Ethereum}-${creditAddress}/${SupportedChain.Ethereum}`]:
+					[getUniqueCreditCollateralKey(getMockToken(SupportedChain.Ethereum, creditAddress), getMockToken(SupportedChain.Ethereum, collateralAddress))]:
 						apr,
 				},
 				duration: {
@@ -157,11 +158,11 @@ describe("Test make proposal", () => {
 				credit: getMockToken(SupportedChain.Ethereum, creditAddress),
 				creditAmount,
 				ltv: {
-					[`${collateralAddress}/${SupportedChain.Ethereum}-${creditAddress}/${SupportedChain.Ethereum}`]:
+					[getUniqueCreditCollateralKey(getMockToken(SupportedChain.Ethereum, creditAddress), getMockToken(SupportedChain.Ethereum, collateralAddress))]:
 						Number(ltv),
 				},
 				apr: {
-					[`${collateralAddress}/${SupportedChain.Ethereum}-${creditAddress}/${SupportedChain.Ethereum}`]:
+					[getUniqueCreditCollateralKey(getMockToken(SupportedChain.Ethereum, creditAddress), getMockToken(SupportedChain.Ethereum, collateralAddress))]:
 						apr,
 				},
 				duration: {
@@ -269,11 +270,11 @@ describe("Test make proposal", () => {
 				credit,
 				creditAmount,
 				ltv: {
-					[`${collateralAddress}/${SupportedChain.Ethereum}-${creditAddress}/${SupportedChain.Ethereum}`]:
+					[getUniqueCreditCollateralKey(credit, getMockToken(SupportedChain.Ethereum, collateralAddress))]:
 						Number(ltv),
 				},
 				apr: {
-					[`${collateralAddress}/${SupportedChain.Ethereum}-${creditAddress}/${SupportedChain.Ethereum}`]:
+					[getUniqueCreditCollateralKey(credit, getMockToken(SupportedChain.Ethereum, collateralAddress))]:
 						apr,
 				},
 				duration: {
