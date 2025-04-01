@@ -1,7 +1,7 @@
 import {
 	fetchAssetPrice,
 	freeUserNonceRetrieve,
-	listProposals,
+	proposalList,
 	proposalCreate,
 	proposalCreateBatch,
 	thesisDetail,
@@ -39,7 +39,7 @@ export const API: IServerAPI = {
 		proposalsByStrategy: async (
 			strategyId: string,
 		): Promise<ProposalWithSignature[]> => {
-			const data = await listProposals({
+			const data = await proposalList({
 				relatedThesisId: strategyId,
 			});
 			invariant(data.results !== undefined, "Error parsing response");
@@ -59,7 +59,7 @@ export const API: IServerAPI = {
 				// If price is being fetched, wait and retry
 				if (
 					assetPrice.is_task_scheduled === true &&
-					assetPrice.task_info.skipped.length === 0
+					assetPrice?.task_info?.skipped?.length === 0
 				) {
 					if (retryCount < MAX_RETRIES) {
 						await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));

@@ -1,93 +1,71 @@
-import type { Hex, SupportedChain } from "@pwndao/sdk-core";
-import type { ProposalWithHash, ProposalWithSignature } from "src/models/strategies/types.js";
+import type { SupportedChain } from "@pwndao/sdk-core";
+import type { ProposalWithHash } from "src/models/strategies/types.js";
 import invariant from "ts-invariant";
 import {
 	type ElasticProposalDeps,
-	createElasticProposalBatch,
+	createElasticProposal,
 } from "../factories/create-elastic-proposal.js";
 import { ProposalType } from "../models/proposals/proposal-base.js";
-import { createChainLinkElasticProposalBatch } from "../factories/create-chain-link-proposal.js";
+import { createChainLinkElasticProposal } from "../factories/create-chain-link-proposal.js";
 import type { ChainLinkElasticProposalDeps } from "../factories/create-chain-link-proposal.js";
-import type { ElasticProposal } from "src/models/proposals/elastic-proposal.js";
-import type { ChainLinkProposal } from "src/models/proposals/chainlink-proposal.js";
-
-const proposalTypes = {
-	[ProposalType.Elastic]: createElasticProposalBatch,
-	[ProposalType.ChainLink]: createChainLinkElasticProposalBatch,
-	[ProposalType.DutchAuction]: () => {
-		throw new Error("Not implemented");
-	},
-	[ProposalType.Simple]: () => {
-		throw new Error("Not implemented");
-	},
-};
-
-type ImplementedProposalTypes = {
-	[K in ProposalType]: typeof proposalTypes[K] extends () => never ? never : K
-  }[ProposalType];
+import { createMultiProposal } from "../contracts/multi-proposal.js";
+import type { Config } from "@wagmi/core";
+import type { ImplementedProposalTypes, ProposalParamWithDeps } from "./types.js";
 
 export const makeProposals = async <T extends ImplementedProposalTypes>(
-	proposalType: T,
-	proposalParams: Parameters<(typeof proposalTypes)[T]>[0],
-	deps: Parameters<(typeof proposalTypes)[T]>[1],
+	config: Config,
+	proposalParams: ProposalParamWithDeps<T>[]
 ) => {
-	invariant(
-		proposalTypes[proposalType],
-		`Proposal type ${proposalType} not found`,
-	);
-	invariant(proposalParams, "Proposal params are required");
-	invariant(deps, "Deps are required");
+	invariant(config, "Config is required");
+	invariant(proposalParams?.length > 0, "Proposal params are required");
 
-	let proposalsWithSignature: ProposalWithSignature[] = [];
+	const proposals: ProposalWithHash[] = [];
 
-	let proposals: ElasticProposal[] | ChainLinkProposal[] = [];
-	let proposalHashes: Hex[] = [];
-
-	switch (proposalType) {
-		case ProposalType.Elastic: {
-			const elasticDeps = deps as ElasticProposalDeps;
-			proposals = await createElasticProposalBatch(
-				proposalParams,
-				elasticDeps,
-			);
-	
-			proposalHashes = await Promise.all(
-				proposals.map((proposal) => elasticDeps.contract.getProposalHash(proposal)),
-			);
-			break;
-		}
-		case ProposalType.ChainLink: {
-			const chainLinkDeps = deps as ChainLinkElasticProposalDeps;
-			proposals = await createChainLinkElasticProposalBatch(
-				proposalParams,
-				chainLinkDeps,
-			);
-			
-			proposalHashes = await Promise.all(
-				proposals.map((proposal) => chainLinkDeps.contract.getProposalHash(proposal)),
-			);
-			break;
-		}
-		default: {
-			throw new Error(`Not implemented for proposal type ${proposalType}`);
+	for (const proposalParam of proposalParams) {
+		switch (proposalParam.type) {
+			case ProposalType.Elastic: {
+				const elasticDeps = proposalParam.deps as ElasticProposalDeps;
+				const filledProposal = await createElasticProposal(
+					proposalParam.params,
+					elasticDeps,
+				);
+				const proposalWithHash = {
+					...filledProposal,
+					hash: await elasticDeps.contract.getProposalHash(filledProposal),
+				} as ProposalWithHash;
+				proposals.push(proposalWithHash);
+				break;
+			}
+			case ProposalType.ChainLink: {
+				const chainLinkDeps = proposalParam.deps as ChainLinkElasticProposalDeps;
+				const filledProposal = await createChainLinkElasticProposal(
+					proposalParam.params,
+					chainLinkDeps,
+				);
+				const proposalWithHash = {
+					...filledProposal,
+					hash: await chainLinkDeps.contract.getProposalHash(filledProposal),
+				} as ProposalWithHash;
+				proposals.push(proposalWithHash);
+				break;
+			}
+			default: {
+				throw new Error(`Not implemented for proposal type ${proposalParam.type}`);
+			}
 		}
 	}
 
-	const proposalWithHash = proposals.map((proposal, index) => ({
-		...proposal,
-		hash: proposalHashes[index],
-	})) as ProposalWithHash[];
+	const proposalsWithSignature = await createMultiProposal(config, proposals);
+	const deps = proposalParams[0].deps;
+	const noncesIssuer = proposalParams[0].params.user;
 
-	proposalsWithSignature = await deps.contract.createMultiProposal(proposalWithHash);
-
-	const usedNonces = proposalParams.terms.user.getUsedNonces();
-
+	const usedNonces = noncesIssuer.getUsedNonces();
 	for (const chain in usedNonces) {
 		const _chain = Number(chain) as SupportedChain;
 		if (!usedNonces[_chain]) continue;
 
 		await deps.api.updateNonces(
-			proposalParams.terms.user.address,
+			noncesIssuer.address,
 			_chain,
 			usedNonces[_chain],
 		);

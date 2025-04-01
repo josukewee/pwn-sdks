@@ -5,13 +5,12 @@ import type {
 	Token,
 	UserWithNonceManager,
 } from "@pwndao/sdk-core";
-import { ZERO_ADDRESS, ZERO_FINGERPRINT } from "@pwndao/sdk-core";
+import { getUniqueCreditCollateralKey, isPoolToken, ZERO_ADDRESS, ZERO_FINGERPRINT } from "@pwndao/sdk-core";
 import type {
 	ICommonProposalFields,
 	IProposalMisc,
 } from "../models/proposals/proposal-base.js";
 import type {
-	ProposalWithHash,
 	ProposalWithSignature,
 } from "../models/strategies/types.js";
 import type { Proposal } from "../models/strategies/types.js";
@@ -40,7 +39,6 @@ export interface IProposalContract<TProposal extends Proposal> {
 	createProposal(params: TProposal, deps: { persistProposal: IServerAPI["post"]["persistProposal"] }): Promise<ProposalWithSignature>;
 	createOnChainProposal(params: TProposal): Promise<ProposalWithSignature>;
 	getProposalHash(proposal: TProposal): Promise<Hex>;
-	createMultiProposal(proposals: ProposalWithHash[]): Promise<ProposalWithSignature[]>;
 }
 
 export type ProposalContract =
@@ -69,15 +67,17 @@ export const getLendingCommonProposalFields = async (
 
 	const proposerSpecHash = await deps.loanContract.getLenderSpecHash(
 		{
-			sourceOfFunds: user.address,
+			sourceOfFunds: isPoolToken(credit) ? credit.address : user.address,
 		},
 		params.collateral.chainId,
 	);
 
+	const creditAddress = isPoolToken(credit) ? credit.underlyingAddress : credit.address;
+
 	const aprValue =
 		(typeof apr !== "number" &&
 			apr[
-				`${collateral.address}/${collateral.chainId}-${credit.address}/${credit.chainId}`
+				getUniqueCreditCollateralKey(credit, collateral)
 			]) ||
 		(apr as number);
 
@@ -94,7 +94,7 @@ export const getLendingCommonProposalFields = async (
 		checkCollateralStateFingerprint: false,
 		collateralStateFingerprint: ZERO_FINGERPRINT,
 
-		creditAddress: credit.address,
+		creditAddress,
 		availableCreditLimit: creditAmount,
 
 		utilizedCreditId,

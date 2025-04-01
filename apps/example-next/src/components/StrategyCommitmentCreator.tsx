@@ -10,15 +10,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMakeProposals, useUserWithNonce } from "@pwndao/sdk-v1-react";
-import {
-	ElasticProposalContract,
-	type IProposalElasticAPIDeps,
-	SimpleLoanContract,
-	type Strategy,
-	createUtilizedCreditId,
-} from "@pwndao/v1-core";
-import { API } from "@pwndao/v1-core";
-import { ProposalType } from "@pwndao/v1-core";
+import type { ImplementedProposalTypes, ProposalParamWithDeps, Strategy } from "@pwndao/v1-core";
+import { createElasticProposals } from "@pwndao/v1-core";
 import { serialize } from "@wagmi/core";
 import { useState } from "react";
 import { useAccount, useConfig, useConnect, useDisconnect } from "wagmi";
@@ -47,17 +40,7 @@ export default function StrategyCommitmentCreator({
 		isSuccess,
 		error,
 		data: txHash,
-	} = useMakeProposals({
-		proposalType: ProposalType.Elastic,
-		api: {
-			persistProposal: API.post.persistProposal,
-			getAssetUsdUnitPrice: API.get.getAssetUsdUnitPrice,
-			persistProposals: API.post.persistProposals,
-			updateNonces: API.post.updateNonce,
-		} as IProposalElasticAPIDeps,
-		contract: new ElasticProposalContract(config),
-		loanContract: new SimpleLoanContract(config),
-	});
+	} = useMakeProposals();
 
 	const { userWithNonce: user } = useUserWithNonce([sepolia.id]);
 
@@ -70,29 +53,18 @@ export default function StrategyCommitmentCreator({
 			return;
 		}
 
+		let proposalsToCreate: ProposalParamWithDeps<ImplementedProposalTypes>[] = []
+
+		proposalsToCreate = createElasticProposals(
+			strategy,
+			user,
+			address,
+			creditAmount,
+			config
+		);
+
 		try {
-			const res = await makeProposal({
-				terms: {
-					user: user,
-					creditAmount: BigInt(creditAmount),
-					ltv: strategy.terms.ltv,
-					apr: strategy.terms.apr,
-					duration: {
-						days: strategy.terms.durationDays,
-					},
-					expirationDays: strategy.terms.expirationDays,
-					utilizedCreditId: createUtilizedCreditId({
-						proposer: address,
-						availableCreditLimit: BigInt(creditAmount),
-					}),
-					minCreditAmountPercentage:
-						strategy.terms.minCreditAmountPercentage,
-					isOffer: true,
-					relatedStrategyId: strategy.terms.relatedStrategyId
-				},
-				collateralAssets: strategy.terms.collateralAssets,
-				creditAssets: strategy.terms.creditAssets,
-			});
+			const res = await makeProposal(proposalsToCreate)
 			console.log(res);
 		} catch (err) {
 			console.error("Error creating commitment:", err);

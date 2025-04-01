@@ -1,25 +1,44 @@
-import type { UserWithNonceManager } from "@pwndao/sdk-core";
-import type { Hex, Token } from "@pwndao/sdk-core";
-import { getLoanContractAddress } from "@pwndao/sdk-core";
+import type { AddressString, UserWithNonceManager } from "@pwndao/sdk-core";
+import type { Hex } from "@pwndao/sdk-core";
+import {
+	getLoanContractAddress,
+	getUniqueCreditCollateralKey,
+} from "@pwndao/sdk-core";
+import type { Config } from "@wagmi/core";
+import invariant from "ts-invariant";
+import type {
+	ImplementedProposalTypes,
+	ProposalParamWithDeps,
+} from "../actions/types.js";
+import { API } from "../api.js";
+import type { IProposalElasticContract } from "../contracts/elastic-proposal-contract.js";
+import { ElasticProposalContract } from "../contracts/elastic-proposal-contract.js";
+import { SimpleLoanContract } from "../contracts/simple-loan-contract.js";
 import { ElasticProposal } from "../models/proposals/elastic-proposal.js";
 import type { IElasticProposalBase } from "../models/proposals/proposal-base.js";
+import { ProposalType } from "../models/proposals/proposal-base.js";
 import type {
 	IProposalStrategy,
+	Strategy,
 	StrategyTerm,
 } from "../models/strategies/types.js";
 import { calculateCreditPerCollateralUnit } from "../utils/calculations.js";
 import {
-	getLendingCommonProposalFields,
+	calculateCollateralAmount,
+	calculateDurationInSeconds,
+	calculateExpirationTimestamp,
+	calculateMinCreditAmount,
+	getLtvValue,
+} from "../utils/proposal-calculations.js";
+import { createUtilizedCreditId } from "../utils/shared-credit.js";
+import {
 	type ILoanContract,
+	getLendingCommonProposalFields,
 } from "./helpers.js";
 import type { BaseTerm, IServerAPI } from "./types.js";
-import type { IProposalElasticContract } from "src/contracts/elastic-proposal-contract.js";
-import { LTV_DENOMINATOR } from "./constants.js";
 
 export type CreateElasticProposalParams = BaseTerm & {
 	minCreditAmountPercentage: number;
-	relatedStrategyId?: string;
-	isOffer: boolean;
 };
 
 export interface IProposalElasticAPIDeps {
@@ -45,16 +64,10 @@ export class ElasticProposalStrategy
 		contract: IProposalElasticContract,
 	): Promise<ElasticProposal> {
 		// Calculate expiration timestamp
-		const expiration =
-			Math.floor(Date.now() / 1000) + params.expirationDays * 24 * 60 * 60;
+		const expiration = calculateExpirationTimestamp(params.expirationDays);
 
 		// Get duration in seconds or timestamp
-		let durationOrDate: number;
-		if (params.duration.days !== undefined) {
-			durationOrDate = params.duration.days * 24 * 60 * 60;
-		} else {
-			durationOrDate = Math.floor(params.duration.date.getTime() / 1000);
-		}
+		const durationOrDate = calculateDurationInSeconds(params.duration);
 
 		// Get collateral amount based on credit amount, LTV, and prices
 		const creditUsdPrice = await api.getAssetUsdUnitPrice(params.credit);
@@ -62,26 +75,30 @@ export class ElasticProposalStrategy
 			params.collateral,
 		);
 
-		const creditAmountUsd =
-			(params.creditAmount * creditUsdPrice) /
-			BigInt(10 ** params.credit.decimals);
-		const minCreditAmountUsd =
-			(BigInt(params.minCreditAmountPercentage) * params.creditAmount) / BigInt(100);
+		// Get LTV value for the credit-collateral pair
+		const ltv = getLtvValue(
+			params.ltv,
+			params.credit,
+			params.collateral,
+			getUniqueCreditCollateralKey,
+		);
+		invariant(ltv, "LTV is undefined");
 
-		const ltv =
-			typeof params.ltv === 'object' 
-				? params.ltv[
-					`${params.collateral.address}/${params.collateral.chainId}-${params.credit.address}/${params.credit.chainId}`
-				] ?? 0
-				: params.ltv;
+		// Calculate the collateral amount using the shared utility
+		const collateralAmount = calculateCollateralAmount({
+			creditAmount: params.creditAmount,
+			ltv,
+			creditDecimals: params.credit.decimals,
+			collateralDecimals: params.collateral.decimals,
+			creditUsdPrice,
+			collateralUsdPrice,
+		});
 
-		// Apply LTV ratio
-		const collateralAmountUsd = (creditAmountUsd * BigInt(LTV_DENOMINATOR)) / BigInt(ltv);
-
-		// Convert back to collateral tokens
-		const collateralAmount =
-			(collateralAmountUsd * BigInt(10 ** params.collateral.decimals)) /
-			collateralUsdPrice;
+		// Calculate min credit amount using the shared utility
+		const minCreditAmount = calculateMinCreditAmount(
+			params.creditAmount,
+			params.minCreditAmountPercentage,
+		);
 
 		// Get common proposal fields
 		const commonFields = await getLendingCommonProposalFields(
@@ -113,10 +130,10 @@ export class ElasticProposalStrategy
 			{
 				...commonFields,
 				creditPerCollateralUnit: BigInt(creditPerCollateralUnit),
-				minCreditAmount: minCreditAmountUsd,
+				minCreditAmount: minCreditAmount,
 				availableCreditLimit: params.creditAmount,
 				chainId: params.collateral.chainId,
-				isOffer: params.isOffer
+				isOffer: params.isOffer,
 			},
 			params.collateral.chainId,
 		);
@@ -156,7 +173,7 @@ export class ElasticProposalStrategy
 					expirationDays: this.term.expirationDays,
 					minCreditAmountPercentage: this.term.minCreditAmountPercentage,
 					relatedStrategyId: this.term.relatedStrategyId,
-					isOffer
+					isOffer,
 				});
 			}
 		}
@@ -260,52 +277,57 @@ export const createElasticProposal = async (
 /**
  * Parameters for creating a batch of elastic proposals
  */
-export type CreateElasticProposalBatchParams = {
-	terms: Omit<BaseTerm, "collateral" | "credit"> & {
-		minCreditAmountPercentage: number;
-		relatedThesisId?: string;
-		isOffer: boolean;
-	};
-	collateralAssets: Token[];
-	creditAssets: Token[];
-};
+export type CreateElasticProposalBatchParams = CreateElasticProposalParams[];
 
-/**
- * Creates multiple elastic proposals in a batch
- *
- * @param params - The parameters for the batch of proposals
- * @param deps - RPC interface and contract
- * @returns Array of created elastic proposals
- */
-export const createElasticProposalBatch = async (
-	params: CreateElasticProposalBatchParams,
-	deps: ElasticProposalDeps,
-): Promise<ElasticProposal[]> => {
-	// Create a strategy term with the batch parameters
-	const dummyTerm: StrategyTerm = {
-		creditAssets: params.creditAssets,
-		collateralAssets: params.collateralAssets,
-		apr: params.terms.apr,
-		durationDays: params.terms.duration.days || 0,
-		ltv: params.terms.ltv,
-		expirationDays: params.terms.expirationDays,
-		minCreditAmountPercentage: params.terms.minCreditAmountPercentage,
-		relatedStrategyId: params.terms.relatedStrategyId,
-	};
+export const createElasticProposals = (
+	strategy: Strategy,
+	user: UserWithNonceManager,
+	address: AddressString,
+	creditAmount: string,
+	config: Config,
+): ProposalParamWithDeps<ImplementedProposalTypes>[] => {
+	const proposals: ProposalParamWithDeps<ImplementedProposalTypes>[] = [];
 
-	// Create a strategy and generate all proposals
-	const strategy = new ElasticProposalStrategy(
-		dummyTerm,
-		deps.api,
-		deps.contract,
-		deps.loanContract,
-	);
-	const proposals = await strategy.createLendingProposals(
-		params.terms.user,
-		params.terms.creditAmount,
-		params.terms.utilizedCreditId,
-		params.terms.isOffer,
-	);
+	const apiDeps = {
+		persistProposal: API.post.persistProposal,
+		getAssetUsdUnitPrice: API.get.getAssetUsdUnitPrice,
+		persistProposals: API.post.persistProposals,
+		updateNonces: API.post.updateNonce,
+	} as IProposalElasticAPIDeps;
+
+	for (const creditAsset of strategy.terms.creditAssets) {
+		const utilizedCreditId = createUtilizedCreditId({
+			proposer: address,
+			availableCreditLimit: BigInt(creditAmount),
+		});
+
+		for (const collateralAsset of strategy.terms.collateralAssets) {
+			proposals.push({
+				type: ProposalType.Elastic,
+				deps: {
+					api: apiDeps,
+					contract: new ElasticProposalContract(config),
+					loanContract: new SimpleLoanContract(config),
+				},
+				params: {
+					user: user,
+					creditAmount: BigInt(creditAmount),
+					ltv: strategy.terms.ltv,
+					apr: strategy.terms.apr,
+					duration: {
+						days: strategy.terms.durationDays,
+					},
+					expirationDays: strategy.terms.expirationDays,
+					utilizedCreditId: utilizedCreditId,
+					minCreditAmountPercentage: strategy.terms.minCreditAmountPercentage,
+					isOffer: true,
+					relatedStrategyId: strategy.id,
+					collateral: collateralAsset,
+					credit: creditAsset,
+				},
+			});
+		}
+	}
 
 	return proposals;
 };

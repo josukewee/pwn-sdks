@@ -11,14 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMakeProposals, useUserWithNonce } from "@pwndao/sdk-v1-vue";
 import {
-	ElasticProposalContract,
-	type IProposalElasticAPIDeps,
-	SimpleLoanContract,
 	type Strategy,
-	createUtilizedCreditId,
+	type ProposalParamWithDeps,
+	type ImplementedProposalTypes,
+  createElasticProposals,
 } from "@pwndao/v1-core";
-import { API } from "@pwndao/v1-core";
-import { ProposalType } from "@pwndao/v1-core";
 import { serialize } from "@wagmi/core";
 import { useAccount, useConfig, useConnect, useDisconnect } from "@wagmi/vue";
 import { ref } from "vue";
@@ -43,17 +40,7 @@ const {
 	isSuccess,
 	error,
 	data: txHash,
-} = useMakeProposals({
-	proposalType: ProposalType.Elastic,
-	api: {
-		persistProposal: API.post.persistProposal,
-		getAssetUsdUnitPrice: API.get.getAssetUsdUnitPrice,
-		persistProposals: API.post.persistProposals,
-		updateNonces: API.post.updateNonce,
-	} as IProposalElasticAPIDeps,
-	contract: new ElasticProposalContract(config),
-  loanContract: new SimpleLoanContract(config),
-});
+} = useMakeProposals();
 
 const { userWithNonce: user } = useUserWithNonce([sepolia.id]);
 
@@ -66,29 +53,10 @@ const handleSubmit = async (e: Event) => {
 		return;
 	}
 
+  const proposalsToCreate: ProposalParamWithDeps<ImplementedProposalTypes>[] = createElasticProposals(props.strategy, user.value, address.value, creditAmount.value, config)
+
 	try {
-		const res = await makeProposal({
-			terms: {
-				user: user.value,
-				creditAmount: BigInt(creditAmount.value),
-				ltv: props.strategy.terms.ltv,
-				apr: props.strategy.terms.apr,
-				duration: {
-					days: props.strategy.terms.durationDays,
-				},
-				expirationDays: props.strategy.terms.expirationDays,
-				utilizedCreditId: createUtilizedCreditId({
-					proposer: address.value,
-					availableCreditLimit: BigInt(creditAmount.value),
-				}),
-				minCreditAmountPercentage:
-					props.strategy.terms.minCreditAmountPercentage,
-        isOffer: true,
-        relatedStrategyId: props.strategy.id,
-			},
-			collateralAssets: props.strategy.terms.collateralAssets,
-			creditAssets: props.strategy.terms.creditAssets,
-		});
+		const res = await makeProposal(proposalsToCreate)
 		console.log(res);
 	} catch (err) {
 		console.error("Error creating commitment:", err);
