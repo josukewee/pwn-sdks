@@ -18,6 +18,7 @@ const parseStrategyToken = (token: AssetModel | CreditAssetModel) => {
 		token.decimals,
 		token.name ?? undefined,
 		token.symbol ?? undefined,
+		token.thumbnailUrl ?? undefined,
 	);
 };
 

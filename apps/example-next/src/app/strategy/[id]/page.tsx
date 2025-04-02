@@ -196,7 +196,8 @@ export default function StrategyDetailPage() {
 									<h3 className="font-semibold text-lg mb-2">Credit Assets</h3>
 									<ul className="list-disc pl-5 space-y-1">
 										{strategy.terms.creditAssets.map((asset) => (
-											<li key={asset.address}>
+											<li key={asset.address} className="flex items-center">
+												<img src={asset.icon} alt={asset.name} className="w-4 h-4 mr-2" />
 												{asset.symbol} ({asset.name})
 											</li>
 										))}
@@ -209,7 +210,8 @@ export default function StrategyDetailPage() {
 									</h3>
 									<ul className="list-disc pl-5 space-y-1">
 										{strategy.terms.collateralAssets.map((asset) => (
-											<li key={asset.address}>
+											<li key={asset.address} className="flex items-center">
+												<img src={asset.icon} alt={asset.name} className="w-4 h-4 mr-2" />
 												{asset.symbol} ({asset.name})
 											</li>
 										))}

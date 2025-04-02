@@ -12,9 +12,10 @@ export class ERC20Token extends BaseAsset {
 		public override decimals: number,
 		public override name?: string,
 		public override symbol?: string,
+		public override icon?: string,
 	) {
 		invariant(address.startsWith("0x"), "Invalid address");
 
-		super(chainId, address, decimals, false, ERC20Token.category, name, symbol);
+		super(chainId, address, decimals, false, ERC20Token.category, name, symbol, icon);
 	}
 }
