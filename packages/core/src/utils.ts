@@ -1,8 +1,7 @@
-import invariant from "ts-invariant";
 import { CHAIN_TO_ADDRESSES_MAP } from "./addresses.js";
 import { SupportedChain } from "./chains.js";
-import { PoolToken } from "./models/pool-token.js";
-import { isPoolToken, Token } from "./models/types.js";
+import type { PoolToken } from "./models/pool-token.js";
+import type { Token } from "./models/types.js";
 
 export const getLoanContractAddress = (chainId: SupportedChain) => {
 	return CHAIN_TO_ADDRESSES_MAP[chainId].pwnSimpleLoan;
