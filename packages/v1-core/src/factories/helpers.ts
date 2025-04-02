@@ -5,19 +5,22 @@ import type {
 	Token,
 	UserWithNonceManager,
 } from "@pwndao/sdk-core";
-import { getUniqueCreditCollateralKey, isPoolToken, ZERO_ADDRESS, ZERO_FINGERPRINT } from "@pwndao/sdk-core";
+import {
+	ZERO_ADDRESS,
+	ZERO_FINGERPRINT,
+	getUniqueCreditCollateralKey,
+	isPoolToken,
+} from "@pwndao/sdk-core";
+import type { IProposalChainLinkContract } from "../contracts/chain-link-proposal-contract.js";
+import type { IProposalElasticContract } from "../contracts/elastic-proposal-contract.js";
+import type { IServerAPI } from "../factories/types.js";
 import type {
 	ICommonProposalFields,
 	IProposalMisc,
 } from "../models/proposals/proposal-base.js";
-import type {
-	ProposalWithSignature,
-} from "../models/strategies/types.js";
+import type { ProposalWithHash, ProposalWithSignature } from "../models/strategies/types.js";
 import type { Proposal } from "../models/strategies/types.js";
 import type { ILenderSpec } from "../models/terms.js";
-import type { IProposalChainLinkContract } from "../contracts/chain-link-proposal-contract.js";
-import type { IProposalElasticContract } from "../contracts/elastic-proposal-contract.js";
-import type { IServerAPI } from "../factories/types.js";
 
 type CommonProposalFieldsParams = {
 	user: UserWithNonceManager;
@@ -36,9 +39,13 @@ export interface ILoanContract {
 }
 
 export interface IProposalContract<TProposal extends Proposal> {
-	createProposal(params: TProposal, deps: { persistProposal: IServerAPI["post"]["persistProposal"] }): Promise<ProposalWithSignature>;
+	createProposal(
+		params: TProposal,
+		deps: { persistProposal: IServerAPI["post"]["persistProposal"] },
+	): Promise<ProposalWithSignature>;
 	createOnChainProposal(params: TProposal): Promise<ProposalWithSignature>;
 	getProposalHash(proposal: TProposal): Promise<Hex>;
+	createMultiProposal(proposals: ProposalWithHash[]): Promise<ProposalWithSignature[]>;
 }
 
 export type ProposalContract =
@@ -49,7 +56,7 @@ export const getLendingCommonProposalFields = async (
 	params: CommonProposalFieldsParams & IProposalMisc,
 	deps: {
 		contract: ProposalContract;
-		loanContract: ILoanContract
+		loanContract: ILoanContract;
 	},
 ): Promise<ICommonProposalFields> => {
 	const {
@@ -72,13 +79,13 @@ export const getLendingCommonProposalFields = async (
 		params.collateral.chainId,
 	);
 
-	const creditAddress = isPoolToken(credit) ? credit.underlyingAddress : credit.address;
+	const creditAddress = isPoolToken(credit)
+		? credit.underlyingAddress
+		: credit.address;
 
 	const aprValue =
 		(typeof apr !== "number" &&
-			apr[
-				getUniqueCreditCollateralKey(credit, collateral)
-			]) ||
+			apr[getUniqueCreditCollateralKey(credit, collateral)]) ||
 		(apr as number);
 
 	const interestAmount = creditAmount * (BigInt(aprValue) / BigInt(1e2));

@@ -8,7 +8,6 @@ import {
 import { ProposalType } from "../models/proposals/proposal-base.js";
 import { createChainLinkElasticProposal } from "../factories/create-chain-link-proposal.js";
 import type { ChainLinkElasticProposalDeps } from "../factories/create-chain-link-proposal.js";
-import { createMultiProposal } from "../contracts/multi-proposal.js";
 import type { Config } from "@wagmi/core";
 import type { ImplementedProposalTypes, ProposalParamWithDeps } from "./types.js";
 
@@ -55,9 +54,10 @@ export const makeProposals = async <T extends ImplementedProposalTypes>(
 		}
 	}
 
-	const proposalsWithSignature = await createMultiProposal(config, proposals);
 	const deps = proposalParams[0].deps;
 	const noncesIssuer = proposalParams[0].params.user;
+
+	const proposalsWithSignature = await deps.contract.createMultiProposal(proposals);
 
 	const usedNonces = noncesIssuer.getUsedNonces();
 	for (const chain in usedNonces) {
