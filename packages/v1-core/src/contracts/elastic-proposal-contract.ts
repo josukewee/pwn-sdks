@@ -6,6 +6,7 @@ import type { Hex } from "viem";
 import {
 	type IProposalContract,
 	type IServerAPI,
+	type ProposalWithHash,
 	type ProposalWithSignature,
 	readPwnSimpleLoanElasticProposalGetProposalHash,
 	writePwnSimpleLoanElasticProposalMakeProposal,
@@ -19,6 +20,19 @@ export interface IProposalElasticContract extends IProposalContract<ElasticPropo
 }
 
 export class ElasticProposalContract extends BaseProposalContract<ElasticProposal> implements IProposalElasticContract {
+	async createMultiProposal(proposals: ProposalWithHash[]): Promise<ProposalWithSignature[]> {
+		const structToSign = this.getMerkleTreeForSigning(proposals);
+
+		const signature = await signTypedData(this.config, structToSign);
+
+		return proposals.map((proposal) => ({
+			...proposal,
+			signature,
+			hash: proposal.hash,
+			isOnChain: false,
+		}) as ProposalWithSignature);
+	}
+
 	async getProposalHash(proposal: ElasticProposal): Promise<Hex> {
 		// on-chain call is not required here. We can just use hashTypedData from wagmi
 		const data = await readPwnSimpleLoanElasticProposalGetProposalHash(
@@ -95,4 +109,5 @@ export class ElasticProposalContract extends BaseProposalContract<ElasticProposa
 		);
 		return data;
 	}
+
 }
