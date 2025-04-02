@@ -12,7 +12,7 @@ import {
 import { useStrategy } from '@pwndao/sdk-v1-vue';
 import { formatUnits } from 'viem';
 import { useRoute, useRouter } from 'vue-router';
-
+import AssetPrice from '@/components/AssetPrice.vue';
 const route = useRoute();
 const router = useRouter();
 const strategyId = route.params.id as string;
@@ -203,7 +203,10 @@ const pairKey =
                       :alt="asset.name"
                       class="w-4 h-4 mr-2"
                     />
-                    {{ asset.symbol }} ({{ asset.name }})
+                    <span class="flex-1">
+                      {{ asset.symbol }} ({{ asset.name }})
+                    </span>
+                    <AssetPrice :asset="asset" />
                   </li>
                 </ul>
               </div>
@@ -221,7 +224,10 @@ const pairKey =
                       :alt="asset.name"
                       class="w-4 h-4 mr-2"
                     />
-                    {{ asset.symbol }} ({{ asset.name }})
+                    <span class="flex-1">
+                      {{ asset.symbol }} ({{ asset.name }})
+                    </span>
+                    <AssetPrice :asset="asset" />
                   </li>
                 </ul>
               </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { AssetPrice } from "@/components/Asset";
 import ProposalsList from "@/components/ProposalsList";
 import StrategyCommitmentCreator from "@/components/StrategyCommitmentCreator";
 import { Button } from "@/components/ui/button";
@@ -197,8 +198,15 @@ export default function StrategyDetailPage() {
 									<ul className="list-disc pl-5 space-y-1">
 										{strategy.terms.creditAssets.map((asset) => (
 											<li key={asset.address} className="flex items-center">
-												<img src={asset.icon} alt={asset.name} className="w-4 h-4 mr-2" />
-												{asset.symbol} ({asset.name})
+												<img
+													src={asset.icon}
+													alt={asset.name}
+													className="w-4 h-4 mr-2"
+												/>
+												<span className="flex-1">
+													{asset.symbol} ({asset.name})
+												</span>
+												<AssetPrice asset={asset} />
 											</li>
 										))}
 									</ul>
@@ -211,8 +219,15 @@ export default function StrategyDetailPage() {
 									<ul className="list-disc pl-5 space-y-1">
 										{strategy.terms.collateralAssets.map((asset) => (
 											<li key={asset.address} className="flex items-center">
-												<img src={asset.icon} alt={asset.name} className="w-4 h-4 mr-2" />
-												{asset.symbol} ({asset.name})
+												<img
+													src={asset.icon}
+													alt={asset.name}
+													className="w-4 h-4 mr-2"
+												/>
+												<span className="flex-1">
+													{asset.symbol} ({asset.name})
+												</span>
+												<AssetPrice asset={asset} />
 											</li>
 										))}
 									</ul>
@@ -275,7 +290,6 @@ export default function StrategyDetailPage() {
 							<CardTitle>Proposals</CardTitle>
 							<CardDescription>
 								List of proposals for this strategy
-
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
