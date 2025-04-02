@@ -1,6 +1,7 @@
 import { CHAIN_TO_ADDRESSES_MAP } from "./addresses.js";
 import { SupportedChain } from "./chains.js";
 import type { PoolToken } from "./models/pool-token.js";
+import { isPoolToken } from "./models/types.js";
 import type { Token } from "./models/types.js";
 
 export const getLoanContractAddress = (chainId: SupportedChain) => {
