@@ -6,6 +6,7 @@ import { ERC20Token } from "@pwndao/sdk-core";
 import invariant from "ts-invariant";
 import type { Strategy, StrategyTerm } from "../../models/strategies/types.js";
 import { MIN_CREDIT_CALCULATION_DENOMINATOR } from "../../factories/constants.js";
+import { ProposalType } from "../../models/proposals/proposal-base.js";
 
 type AssetModel = CollateralAssetInThesisSchemaWorkaround;
 type CreditAssetModel = Omit<AssetModel, "ltv" | "apr" | "allocationPercentage">;
@@ -79,6 +80,7 @@ export const parseBackendStrategiesResponse = (
 			avatar: backendData.curator.avatar,
 			description: backendData.curator.description,
 		},
+		type: backendData.strategyType === 1 ? ProposalType.Elastic : ProposalType.ChainLink,
 		lendingStats: {
 			totalCommittedAmount: backendData.creditsStats.reduce(
 				(acc, v) => acc + BigInt(v.amountsStats.totalCommittedAmount || 0),

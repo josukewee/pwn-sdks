@@ -61,6 +61,7 @@ export type Strategy = {
 		avatar: string | null;
 		description: string;
 	} | null;
+	type: ProposalType;
 	lendingStats: {
 		totalCommittedAmount: bigint;
 		totalUtilizedAmount: bigint;
