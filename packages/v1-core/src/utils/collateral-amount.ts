@@ -1,6 +1,7 @@
 import { ChainLinkProposalContract, ElasticProposalContract } from "../contracts/index.js";
-import { ProposalType } from "../../src/index.js"
-import type { Proposal } from "../../src/index.js"
+import { ProposalType } from "../models/proposals/proposal-base.js"
+import type { Proposal } from "../models/strategies/types.js"
+import invariant from "ts-invariant";
 
 type CommonProposalParams = Pick<Proposal, 'chainId' | 'type' | 'availableCreditLimit'>
 
@@ -27,5 +28,5 @@ export const getCollateralAmount = async (contract: ElasticProposalContract | Ch
         return await contract.getCollateralAmount(proposal)
     }
     
-    throw new Error(`Incompatible proposal type and contract combination: ${proposalSpecificParams.type}`);
+    invariant(false, `Incompatible proposal type and contract combination: ${proposalSpecificParams.type}`);
 }
