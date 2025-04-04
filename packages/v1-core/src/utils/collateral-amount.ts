@@ -20,13 +20,8 @@ export const getCollateralAmount = async (contract: ElasticProposalContract | Ch
         ...proposalSpecificParams,
         availableCreditLimit: amount,
     } as never;
-
-    if (
-        (contract instanceof ElasticProposalContract && proposalSpecificParams.type === ProposalType.Elastic) ||
-        (contract instanceof ChainLinkProposalContract && proposalSpecificParams.type === ProposalType.ChainLink)
-    ) {
-        return await contract.getCollateralAmount(proposal)
-    }
     
-    invariant(false, `Incompatible proposal type and contract combination: ${proposalSpecificParams.type}`);
+    invariant([ProposalType.Elastic, ProposalType.ChainLink].includes(proposalSpecificParams.type), `Incompatible proposal type and contract combination: ${proposalSpecificParams.type}`)
+
+    return await contract.getCollateralAmount(proposal)
 }
