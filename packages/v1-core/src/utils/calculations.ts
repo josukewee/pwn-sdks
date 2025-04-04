@@ -52,59 +52,50 @@ export const calculateCollateralAmountFungibleProposal = ({
 
 /**
  * Calculates the collateral amount based on the ltv
- * @param creditAmount - The amount of credit to be collateralized
- * @param ltv - The ltv to be used
- * @param collateralUnitPrice - The price of the collateral
- * @param creditUnitPrice - The price of the credit
- * @param creditPriceDecimals - Number of decimals in creditUnitPrice (optional, defaults to 18)
- * @param collateralPriceDecimals - Number of decimals in collateralUnitPrice (optional, defaults to 18)
- * @returns The collateral amount
+ * @param creditAmount - The amount of credit to be collateralized as a decimal string (e.g. "1000.50" for 1000.50 USDC)
+ * @param ltv - The ltv to be used with 6 decimal places (e.g. 700000 for 70% LTV)
+ * @param collateralPrice - The price of the collateral in USD (e.g. 1791.43 for $1,791.43)
+ * @param creditPrice - The price of the credit in USD (e.g. 1.01 for $1.01)
+ * @returns The collateral amount in smallest units (e.g. wei)
  * @example
- * // Calculate collateral needed for 1000 USDC at 70% LTV with ETH at $1791.43
+ * // Calculate collateral needed for 1000.50 USDC at 70% LTV with ETH at $1791.43
  * const result = calculateCollateralBasedOnLtv(
- *   parseUnits("1000", 6), // 1000 USDC (6 decimals)
- *   BigInt(70), // 70% LTV
- *   parseUnits("1791.43", 18), // ETH price $1791.43 (18 decimals)
- *   parseUnits("1.01", 6), // USDC price $1.01 (6 decimals)
- *   6, // USDC price decimals
- *   18, // ETH price decimals
+ *   "1000.50", // 1000.50 USDC
+ *   BigInt(700000), // 70% LTV (700000 = 70% with 6 decimal places)
+ *   1791.43, // ETH price $1791.43
+ *   1.01, // USDC price $1.01
  * );
- * // result: approximately 0.805 ETH
+ * // result: approximately 0.805 ETH in wei
  */
 export const calculateCollateralBasedOnLtv = (
-	creditAmount: bigint,
+	creditAmount: string,
 	ltv: bigint,
-	collateralUnitPrice: bigint,
-	creditUnitPrice: bigint,
-	creditPriceDecimals = 18,
-	collateralPriceDecimals = 18,
+	collateralPrice: number,
+	creditPrice: number,
 ): bigint => {
-	// Convert credit price to match collateral price decimals
-	const decimalDifference = collateralPriceDecimals - creditPriceDecimals;
-	const normalizedCreditPrice =
-		decimalDifference > 0
-			? creditUnitPrice * BigInt(10 ** decimalDifference)
-			: creditUnitPrice / BigInt(10 ** Math.abs(decimalDifference));
+	if (ltv === BigInt(0) || ltv < BigInt(0)) {
+		throw new Error("LTV cannot be zero or negative");
+	}
 
-	// Calculate total credit value in USD (maintaining precision)
-	const creditValue = new Decimal(creditAmount.toString())
-		.mul(normalizedCreditPrice.toString())
-		.div(BigInt(10 ** creditPriceDecimals).toString());
+	// Convert credit amount to Decimal for precise calculation
+	const credit = new Decimal(creditAmount);
+	const creditPriceDecimal = new Decimal(creditPrice);
+	const collateralPriceDecimal = new Decimal(collateralPrice);
+	const ltvDecimal = new Decimal(ltv.toString()).div(new Decimal("1000000")); // Convert 6 decimal offset LTV to ratio
 
-	// Calculate required collateral value in USD
-	const requiredCollateralValue = creditValue.mul(100).div(ltv.toString());
+	// Step 1: Calculate credit value in USD
+	const creditUsd = credit.mul(creditPriceDecimal);
 
-	// Convert to collateral tokens
-	// Multiply by 10^18 to maintain precision when dividing by collateral price
-	const scaledCollateralValue = requiredCollateralValue.mul(
-		BigInt(10 ** 18).toString(),
-	);
+	// Step 2: Calculate required collateral value in USD by dividing by LTV ratio
+	// For example, with $1000 credit and 80% LTV (0.8), we need $1000/0.8 = $1250 collateral
+	const collateralUsd = creditUsd.div(ltvDecimal);
 
-	const result = scaledCollateralValue.div(
-		new Decimal(collateralUnitPrice.toString()),
-	);
+	// Step 3: Convert to collateral tokens and multiply by 10^18 for wei units
+	const collateralAmount = collateralUsd
+		.div(collateralPriceDecimal)
+		.mul(new Decimal(10).pow(18));
 
-	return BigInt(result.toFixed(0));
+	return BigInt(collateralAmount.toFixed(0));
 };
 
 export const calculateCreditPerCollateralUnit = (
