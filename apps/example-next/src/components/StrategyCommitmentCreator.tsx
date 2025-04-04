@@ -10,7 +10,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMakeProposals, useUserWithNonce } from "@pwndao/sdk-v1-react";
-import type { ImplementedProposalTypes, ProposalParamWithDeps, Strategy } from "@pwndao/v1-core";
+import type {
+	Strategy,
+} from "@pwndao/v1-core";
 import { createElasticProposals } from "@pwndao/v1-core";
 import { serialize } from "@wagmi/core";
 import { useState } from "react";
@@ -31,43 +33,45 @@ export default function StrategyCommitmentCreator({
 
 	// Form state
 	const [creditAmount, setCreditAmount] = useState("100");
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	const config = useConfig();
 
+	const { userWithNonce: user } = useUserWithNonce([sepolia.id]);
 	const {
 		mutateAsync: makeProposal,
 		isPending: isLoading,
 		isSuccess,
 		error,
 		data: txHash,
-	} = useMakeProposals();
-
-	const { userWithNonce: user } = useUserWithNonce([sepolia.id]);
+	} = useMakeProposals(user);
 
 	// Handle form submission
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		setErrorMessage(null);
 
 		if (!isConnected || !address || !user) {
 			connect({ connector: injected() });
 			return;
 		}
 
-		let proposalsToCreate: ProposalParamWithDeps<ImplementedProposalTypes>[] = []
-
-		proposalsToCreate = createElasticProposals(
-			strategy,
-			user,
-			address,
-			creditAmount,
-			config
-		);
-
 		try {
-			const res = await makeProposal(proposalsToCreate)
-			console.log(res);
+			// Create proposals with proper parameters
+			const proposalsToCreate = createElasticProposals(
+				strategy,
+				address,
+				creditAmount,
+				config,
+			);
+
+			const res = await makeProposal(proposalsToCreate);
+			console.log("Proposals created successfully:", res);
 		} catch (err) {
 			console.error("Error creating commitment:", err);
+			setErrorMessage(
+				err instanceof Error ? err.message : "An unknown error occurred",
+			);
 		}
 	};
 
@@ -194,10 +198,12 @@ export default function StrategyCommitmentCreator({
 					</div>
 				)}
 
-				{error && (
+				{(error || errorMessage) && (
 					<div className="mt-6 p-4 bg-red-50 text-red-700 rounded-md">
 						<p className="font-medium">Error creating commitment:</p>
-						<p className="mt-1">{error.message || String(error)}</p>
+						<p className="mt-1">
+							{errorMessage || error?.message || String(error)}
+						</p>
 					</div>
 				)}
 			</CardContent>

@@ -1,5 +1,6 @@
 "use client";
 
+import type { UserWithNonceManager } from "@pwndao/sdk-core";
 import type {
 	ImplementedProposalTypes,
 	ProposalParamWithDeps,
@@ -7,9 +8,12 @@ import type {
 } from "@pwndao/v1-core";
 import { makeProposals } from "@pwndao/v1-core";
 import { useMutation } from "@tanstack/react-query";
+import invariant from "ts-invariant";
 import { useConfig } from "wagmi";
 
-export const useMakeProposals = () => {
+export const useMakeProposals = (
+	user: UserWithNonceManager | undefined,
+) => {
 	const config = useConfig();
 
 	return useMutation<
@@ -20,7 +24,8 @@ export const useMakeProposals = () => {
 		mutationFn: async (
 			params: ProposalParamWithDeps<ImplementedProposalTypes>[],
 		) => {
-			return await makeProposals(config, params);
+			invariant(user, "User is required");
+			return await makeProposals(config, params, user);
 		},
 		onSuccess: (data) => {
 			console.log(data);

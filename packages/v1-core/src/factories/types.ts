@@ -8,7 +8,6 @@ import type {
 	Hex,
 	SupportedChain,
 	Token,
-	UserWithNonceManager,
 } from "@pwndao/sdk-core";
 import type {
 	ProposalWithSignature,
@@ -16,7 +15,6 @@ import type {
 } from "../models/strategies/types.js";
 
 export type BaseTerm = {
-	user: UserWithNonceManager;
 	collateral: Token;
 	credit: Token;
 	creditAmount: bigint;

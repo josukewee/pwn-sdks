@@ -47,7 +47,8 @@ export class ChainLinkProposalStrategy
 
   async implementChainLinkProposal(
     params: CreateChainLinkElasticProposalParams,
-    contract: IProposalChainLinkContract
+    contract: IProposalChainLinkContract,
+    user: UserWithNonceManager,
   ): Promise<ChainLinkProposal | undefined> {
     // Calculate expiration timestamp
     const expiration = calculateExpirationTimestamp(params.expirationDays);
@@ -70,7 +71,9 @@ export class ChainLinkProposalStrategy
     // Get common proposal fields
     const commonFields = await getLendingCommonProposalFields(
       {
-        user: params.user,
+        nonce: user.getNextNonce(params.collateral.chainId),
+        nonceSpace: user.getNonceSpace(params.collateral.chainId),
+        user,
         collateral: params.collateral,
         credit: params.credit,
         creditAmount: params.creditAmount,
@@ -111,9 +114,9 @@ export class ChainLinkProposalStrategy
     for (const credit of this.term.creditAssets) {
       for (const collateral of this.term.collateralAssets) {
         result.push({
+          user,
           collateral,
           credit,
-          user,
           creditAmount,
           utilizedCreditId,
           apr: this.term.apr,
@@ -154,6 +157,7 @@ export class ChainLinkProposalStrategy
           return await this.implementChainLinkProposal(
             params,
             this.contract,
+            user,
           );
         } catch (error) {
           console.error('Error creating ChainLink proposal:', error);
@@ -188,7 +192,8 @@ export type ChainLinkElasticProposalDeps = {
 
 export const createChainLinkElasticProposal = async (
   params: CreateChainLinkElasticProposalParams,
-  deps: ChainLinkElasticProposalDeps
+  deps: ChainLinkElasticProposalDeps,
+  user: UserWithNonceManager,
 ): Promise<ChainLinkProposal> => {
 	// Create a dummy StrategyTerm with just enough data for the strategy to work
 	const dummyTerm: StrategyTerm = {
@@ -208,7 +213,7 @@ export const createChainLinkElasticProposal = async (
     deps.loanContract,
   );
   const proposals = await strategy.createLendingProposals(
-    params.user,
+    user,
     params.creditAmount,
     params.utilizedCreditId,
     params.isOffer
@@ -251,7 +256,7 @@ export const createChainLinkProposals = (
 					loanContract: new SimpleLoanContract(config),
 				},
 				params: {
-					user: user,
+					user,
 					creditAmount: BigInt(creditAmount),
 					ltv: strategy.terms.ltv,
 					apr: strategy.terms.apr,
