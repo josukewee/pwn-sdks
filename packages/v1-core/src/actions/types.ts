@@ -1,4 +1,3 @@
-import type { UserWithNonceManager } from "@pwndao/sdk-core";
 import { ProposalType } from "../models/proposals/proposal-base.js";
 import { createElasticProposal } from "../factories/create-elastic-proposal.js";
 import { createChainLinkElasticProposal } from "../factories/create-chain-link-proposal.js";
