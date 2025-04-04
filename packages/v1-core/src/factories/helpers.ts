@@ -24,6 +24,8 @@ import type { ILenderSpec } from "../models/terms.js";
 
 type CommonProposalFieldsParams = {
 	user: UserWithNonceManager;
+	nonce: bigint;
+	nonceSpace: bigint;
 	collateral: Token;
 	credit: Token;
 	creditAmount: bigint;
@@ -61,6 +63,8 @@ export const getLendingCommonProposalFields = async (
 ): Promise<ICommonProposalFields> => {
 	const {
 		user,
+		nonce,
+		nonceSpace,
 		collateral,
 		credit,
 		creditAmount,
@@ -91,8 +95,8 @@ export const getLendingCommonProposalFields = async (
 	const interestAmount = creditAmount * (BigInt(aprValue) / BigInt(1e2));
 
 	return {
-		nonce: user.getNextNonce(params.collateral.chainId),
-		nonceSpace: user.getNonceSpace(params.collateral.chainId),
+		nonce,
+		nonceSpace,
 
 		collateralAddress: collateral.address,
 		collateralCategory: collateral.category,

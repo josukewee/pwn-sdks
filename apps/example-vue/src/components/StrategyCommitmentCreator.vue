@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useMakeProposals, useUserWithNonce } from "@pwndao/sdk-v1-vue";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useMakeProposals, useUserWithNonce } from '@pwndao/sdk-v1-vue';
 import {
-	type Strategy,
-	type ProposalParamWithDeps,
-	type ImplementedProposalTypes,
+  type ImplementedProposalTypes,
+  type ProposalParamWithDeps,
+  type Strategy,
   createElasticProposals,
-} from "@pwndao/v1-core";
-import { serialize } from "@wagmi/core";
-import { useAccount, useConfig, useConnect, useDisconnect } from "@wagmi/vue";
-import { ref } from "vue";
-import { sepolia } from "wagmi/chains";
-import { injected } from "wagmi/connectors";
+} from '@pwndao/v1-core';
+import { serialize } from '@wagmi/core';
+import { useAccount, useConfig, useConnect, useDisconnect } from '@wagmi/vue';
+import { ref } from 'vue';
+import { sepolia } from 'wagmi/chains';
+import { injected } from 'wagmi/connectors';
 
 const props = defineProps<{
-	strategy: Strategy;
+  strategy: Strategy;
 }>();
 
 const { address, isConnected } = useAccount();
@@ -32,35 +32,44 @@ const { disconnect } = useDisconnect();
 const config = useConfig();
 
 // Form state
-const creditAmount = ref("100");
-
-const {
-	mutateAsync: makeProposal,
-	isPending: isLoading,
-	isSuccess,
-	error,
-	data: txHash,
-} = useMakeProposals();
+const creditAmount = ref('100');
+const errorMessage = ref<string | null>(null);
 
 const { userWithNonce: user } = useUserWithNonce([sepolia.id]);
+const {
+  mutateAsync: makeProposal,
+  isPending: isLoading,
+  isSuccess,
+  error,
+  data: txHash,
+} = useMakeProposals(user);
 
 // Handle form submission
 const handleSubmit = async (e: Event) => {
-	e.preventDefault();
+  e.preventDefault();
+  errorMessage.value = null;
 
-	if (!isConnected.value || !address.value || !user.value) {
-		connect({ connector: injected() });
-		return;
-	}
+  if (!isConnected.value || !address.value || !user.value) {
+    connect({ connector: injected() });
+    return;
+  }
 
-  const proposalsToCreate: ProposalParamWithDeps<ImplementedProposalTypes>[] = createElasticProposals(props.strategy, user.value, address.value, creditAmount.value, config)
+  try {
+    // Create proposals with proper parameters
+    const proposalsToCreate = createElasticProposals(
+      props.strategy,
+      address.value,
+      creditAmount.value,
+      config
+    );
 
-	try {
-		const res = await makeProposal(proposalsToCreate)
-		console.log(res);
-	} catch (err) {
-		console.error("Error creating commitment:", err);
-	}
+    const res = await makeProposal(proposalsToCreate);
+    console.log('Proposals created successfully:', res);
+  } catch (err) {
+    console.error('Error creating commitment:', err);
+    errorMessage.value =
+      err instanceof Error ? err.message : 'An unknown error occurred';
+  }
 };
 </script>
 
@@ -78,11 +87,7 @@ const handleSubmit = async (e: Event) => {
         <div class="p-4 bg-muted rounded-md">
           <div v-if="isConnected" class="space-y-2">
             <p class="text-green-600 font-medium">Connected: {{ address }}</p>
-            <Button
-              variant="destructive"
-              size="sm"
-              @click="disconnect"
-            >
+            <Button variant="destructive" size="sm" @click="disconnect">
               Disconnect
             </Button>
           </div>
@@ -118,11 +123,19 @@ const handleSubmit = async (e: Event) => {
           <div class="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span class="text-muted-foreground">APR:</span>
-              <span class="ml-2">{{ strategy.terms.apr[Object.keys(strategy.terms.apr)[0]] }}%</span>
+              <span class="ml-2"
+                >{{
+                  strategy.terms.apr[Object.keys(strategy.terms.apr)[0]]
+                }}%</span
+              >
             </div>
             <div>
               <span class="text-muted-foreground">LTV:</span>
-              <span class="ml-2">{{ strategy.terms.ltv[Object.keys(strategy.terms.ltv)[0]] }}%</span>
+              <span class="ml-2"
+                >{{
+                  strategy.terms.ltv[Object.keys(strategy.terms.ltv)[0]]
+                }}%</span
+              >
             </div>
             <div>
               <span class="text-muted-foreground">Duration:</span>
@@ -142,20 +155,28 @@ const handleSubmit = async (e: Event) => {
           :disabled="isLoading || (!isConnected && !address)"
           class="w-full"
         >
-          {{ isLoading
-            ? 'Creating Commitment...'
-            : !isConnected
-            ? 'Connect Wallet to Continue'
-            : 'Commit Funds' }}
+          {{
+            isLoading
+              ? 'Creating Commitment...'
+              : !isConnected
+              ? 'Connect Wallet to Continue'
+              : 'Commit Funds'
+          }}
         </Button>
       </form>
 
       <!-- Transaction Status -->
-      <div v-if="isLoading" class="mt-6 p-4 bg-blue-50 text-blue-700 rounded-md">
+      <div
+        v-if="isLoading"
+        class="mt-6 p-4 bg-blue-50 text-blue-700 rounded-md"
+      >
         <p class="font-medium">Transaction in progress...</p>
       </div>
 
-      <div v-if="isSuccess" class="mt-6 p-4 bg-green-50 text-green-700 rounded-md">
+      <div
+        v-if="isSuccess"
+        class="mt-6 p-4 bg-green-50 text-green-700 rounded-md"
+      >
         <p class="font-medium">Commitment created successfully!</p>
         <p v-if="txHash" class="mt-2">
           Transaction Hash:
@@ -170,9 +191,14 @@ const handleSubmit = async (e: Event) => {
         </p>
       </div>
 
-      <div v-if="error" class="mt-6 p-4 bg-red-50 text-red-700 rounded-md">
+      <div
+        v-if="error || errorMessage"
+        class="mt-6 p-4 bg-red-50 text-red-700 rounded-md"
+      >
         <p class="font-medium">Error creating commitment:</p>
-        <p class="mt-1">{{ error.message || String(error) }}</p>
+        <p class="mt-1">
+          {{ errorMessage || error?.message || String(error) }}
+        </p>
       </div>
     </CardContent>
   </Card>

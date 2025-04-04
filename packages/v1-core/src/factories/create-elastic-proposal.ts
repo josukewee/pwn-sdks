@@ -62,6 +62,7 @@ export class ElasticProposalStrategy
 		params: CreateElasticProposalParams,
 		api: IProposalElasticAPIDeps,
 		contract: IProposalElasticContract,
+		user: UserWithNonceManager,
 	): Promise<ElasticProposal> {
 		// Calculate expiration timestamp
 		const expiration = calculateExpirationTimestamp(params.expirationDays);
@@ -103,7 +104,9 @@ export class ElasticProposalStrategy
 		// Get common proposal fields
 		const commonFields = await getLendingCommonProposalFields(
 			{
-				user: params.user,
+				nonce: user.getNextNonce(params.collateral.chainId),
+				nonceSpace: user.getNonceSpace(params.collateral.chainId),
+				user,
 				collateral: params.collateral,
 				credit: params.credit,
 				creditAmount: params.creditAmount,
@@ -149,7 +152,6 @@ export class ElasticProposalStrategy
 	 * @returns The proposals parameters
 	 */
 	getProposalsParams(
-		user: UserWithNonceManager,
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
 		isOffer: boolean,
@@ -160,7 +162,6 @@ export class ElasticProposalStrategy
 				result.push({
 					collateral,
 					credit,
-					user,
 					creditAmount,
 					utilizedCreditId,
 
@@ -196,7 +197,6 @@ export class ElasticProposalStrategy
 		isOffer: boolean,
 	): Promise<ElasticProposal[]> {
 		const paramsArray = this.getProposalsParams(
-			user,
 			creditAmount,
 			utilizedCreditId,
 			isOffer,
@@ -211,6 +211,7 @@ export class ElasticProposalStrategy
 						params,
 						this.api,
 						this.contract,
+						user,
 					);
 				} catch (error) {
 					console.error("Error creating Elastic proposal:", error);
@@ -247,6 +248,7 @@ export type ElasticProposalDeps = {
 export const createElasticProposal = async (
 	params: CreateElasticProposalParams,
 	deps: ElasticProposalDeps,
+	user: UserWithNonceManager,
 ): Promise<ElasticProposal> => {
 	const dummyTerm: StrategyTerm = {
 		creditAssets: [params.credit],
@@ -266,7 +268,7 @@ export const createElasticProposal = async (
 		deps.loanContract,
 	);
 	const proposals = await strategy.createLendingProposals(
-		params.user,
+		user,
 		params.creditAmount,
 		params.utilizedCreditId,
 		params.isOffer,
@@ -281,7 +283,6 @@ export type CreateElasticProposalBatchParams = CreateElasticProposalParams[];
 
 export const createElasticProposals = (
 	strategy: Strategy,
-	user: UserWithNonceManager,
 	address: AddressString,
 	creditAmount: string,
 	config: Config,
@@ -310,7 +311,6 @@ export const createElasticProposals = (
 					loanContract: new SimpleLoanContract(config),
 				},
 				params: {
-					user: user,
 					creditAmount: BigInt(creditAmount),
 					ltv: strategy.terms.ltv,
 					apr: strategy.terms.apr,

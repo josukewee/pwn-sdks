@@ -36,7 +36,6 @@ export interface IProposalStrategy<
 > {
 	term: StrategyTerm;
 	getProposalsParams(
-		user: UserWithNonceManager,
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
 		isOffer: boolean,

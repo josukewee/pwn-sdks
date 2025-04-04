@@ -1,4 +1,4 @@
-import type { SupportedChain } from "@pwndao/sdk-core";
+import type { SupportedChain, UserWithNonceManager } from "@pwndao/sdk-core";
 import type { ProposalWithHash } from "src/models/strategies/types.js";
 import invariant from "ts-invariant";
 import {
@@ -13,7 +13,8 @@ import type { ImplementedProposalTypes, ProposalParamWithDeps } from "./types.js
 
 export const makeProposals = async <T extends ImplementedProposalTypes>(
 	config: Config,
-	proposalParams: ProposalParamWithDeps<T>[]
+	proposalParams: ProposalParamWithDeps<T>[],
+	user: UserWithNonceManager,
 ) => {
 	invariant(config, "Config is required");
 	invariant(proposalParams?.length > 0, "Proposal params are required");
@@ -27,6 +28,7 @@ export const makeProposals = async <T extends ImplementedProposalTypes>(
 				const filledProposal = await createElasticProposal(
 					proposalParam.params,
 					elasticDeps,
+					user,
 				);
 				const proposalWithHash = {
 					...filledProposal,
@@ -40,6 +42,7 @@ export const makeProposals = async <T extends ImplementedProposalTypes>(
 				const filledProposal = await createChainLinkElasticProposal(
 					proposalParam.params,
 					chainLinkDeps,
+					user,
 				);
 				const proposalWithHash = {
 					...filledProposal,
@@ -55,17 +58,16 @@ export const makeProposals = async <T extends ImplementedProposalTypes>(
 	}
 
 	const deps = proposalParams[0].deps;
-	const noncesIssuer = proposalParams[0].params.user;
 
 	const proposalsWithSignature = await deps.contract.createMultiProposal(proposals);
 
-	const usedNonces = noncesIssuer.getUsedNonces();
+	const usedNonces = user.getUsedNonces();
 	for (const chain in usedNonces) {
 		const _chain = Number(chain) as SupportedChain;
 		if (!usedNonces[_chain]) continue;
 
 		await deps.api.updateNonces(
-			noncesIssuer.address,
+			user.address,
 			_chain,
 			usedNonces[_chain],
 		);

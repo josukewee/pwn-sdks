@@ -13,12 +13,12 @@ import {
 	getMockToken,
 	getMockUserWithNonceManager,
 } from "@pwndao/sdk-core";
+import { SupportedProtocol } from "@pwndao/sdk-core";
 import { LBTC, PYUSD } from "../addresses.js";
 import { ChainLinkProposal } from "../models/proposals/chainlink-proposal.js";
 import { ProposalType } from "../models/proposals/proposal-base.js";
 import { convertNameIntoDenominator } from "../utils/chainlink-feeds.js";
 import { makeProposal } from "./make-proposal.js";
-import { SupportedProtocol } from "@pwndao/sdk-core";
 
 describe("Test make proposal", () => {
 	const collateralAddress = LBTC[SupportedChain.Ethereum] as AddressString;
@@ -62,19 +62,23 @@ describe("Test make proposal", () => {
 		};
 
 		const proposal = await makeProposal<ProposalType.Elastic>(
+			getMockUserWithNonceManager(user_address),
 			ProposalType.Elastic,
 			{
 				collateral: getMockToken(SupportedChain.Ethereum, collateralAddress),
-				user: getMockUserWithNonceManager(user_address),
 				credit: getMockToken(SupportedChain.Ethereum, creditAddress),
 				creditAmount,
 				ltv: {
-					[getUniqueCreditCollateralKey(getMockToken(SupportedChain.Ethereum, creditAddress), getMockToken(SupportedChain.Ethereum, collateralAddress))]:
-						Number(ltv),
+					[getUniqueCreditCollateralKey(
+						getMockToken(SupportedChain.Ethereum, creditAddress),
+						getMockToken(SupportedChain.Ethereum, collateralAddress),
+					)]: Number(ltv),
 				},
 				apr: {
-					[getUniqueCreditCollateralKey(getMockToken(SupportedChain.Ethereum, creditAddress), getMockToken(SupportedChain.Ethereum, collateralAddress))]:
-						apr,
+					[getUniqueCreditCollateralKey(
+						getMockToken(SupportedChain.Ethereum, creditAddress),
+						getMockToken(SupportedChain.Ethereum, collateralAddress),
+					)]: apr,
 				},
 				duration: {
 					days: durationDays,
@@ -150,20 +154,28 @@ describe("Test make proposal", () => {
 				.mockImplementation(() => Promise.resolve(proposerSpecHash)),
 		};
 
+		const user = getMockUserWithNonceManager(user_address);
+
+		expect(user.nonces[SupportedChain.Ethereum]?.[0]).toBe(0n);
+
 		const proposal = await makeProposal<ProposalType.ChainLink>(
+			user,
 			ProposalType.ChainLink,
 			{
 				collateral: getMockToken(SupportedChain.Ethereum, collateralAddress),
-				user: getMockUserWithNonceManager(user_address),
 				credit: getMockToken(SupportedChain.Ethereum, creditAddress),
 				creditAmount,
 				ltv: {
-					[getUniqueCreditCollateralKey(getMockToken(SupportedChain.Ethereum, creditAddress), getMockToken(SupportedChain.Ethereum, collateralAddress))]:
-						Number(ltv),
+					[getUniqueCreditCollateralKey(
+						getMockToken(SupportedChain.Ethereum, creditAddress),
+						getMockToken(SupportedChain.Ethereum, collateralAddress),
+					)]: Number(ltv),
 				},
 				apr: {
-					[getUniqueCreditCollateralKey(getMockToken(SupportedChain.Ethereum, creditAddress), getMockToken(SupportedChain.Ethereum, collateralAddress))]:
-						apr,
+					[getUniqueCreditCollateralKey(
+						getMockToken(SupportedChain.Ethereum, creditAddress),
+						getMockToken(SupportedChain.Ethereum, collateralAddress),
+					)]: apr,
 				},
 				duration: {
 					days: durationDays,
@@ -260,22 +272,35 @@ describe("Test make proposal", () => {
 				.mockImplementation(() => Promise.resolve(proposerSpecHash)),
 		};
 
-		const credit = getMockPoolToken(creditAddress, SupportedProtocol.AAVE, SupportedChain.Ethereum, poolTokenAddress);
+		const credit = getMockPoolToken(
+			creditAddress,
+			SupportedProtocol.AAVE,
+			SupportedChain.Ethereum,
+			poolTokenAddress,
+		);
+
+		const user = getMockUserWithNonceManager(user_address);
+
+		expect(user.nonces[SupportedChain.Ethereum]?.[0]).toBe(0n);
 
 		const proposal = await makeProposal<ProposalType.Elastic>(
+			user,
 			ProposalType.Elastic,
 			{
 				collateral: getMockToken(SupportedChain.Ethereum, collateralAddress),
-				user: getMockUserWithNonceManager(user_address),
 				credit,
 				creditAmount,
 				ltv: {
-					[getUniqueCreditCollateralKey(credit, getMockToken(SupportedChain.Ethereum, collateralAddress))]:
-						Number(ltv),
+					[getUniqueCreditCollateralKey(
+						credit,
+						getMockToken(SupportedChain.Ethereum, collateralAddress),
+					)]: Number(ltv),
 				},
 				apr: {
-					[getUniqueCreditCollateralKey(credit, getMockToken(SupportedChain.Ethereum, collateralAddress))]:
-						apr,
+					[getUniqueCreditCollateralKey(
+						credit,
+						getMockToken(SupportedChain.Ethereum, collateralAddress),
+					)]: apr,
 				},
 				duration: {
 					days: durationDays,
