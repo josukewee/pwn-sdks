@@ -1,3 +1,4 @@
+export * from "./use-elastic-chainlink-collateral-amount";
 export * from "./use-strategy";
 export * from "./use-strategies";
 export * from "./use-strategy-proposals";
