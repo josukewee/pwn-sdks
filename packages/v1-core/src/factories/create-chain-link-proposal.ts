@@ -105,7 +105,6 @@ export class ChainLinkProposalStrategy
   }
 
   getProposalsParams(
-    user: UserWithNonceManager,
     creditAmount: bigint,
     utilizedCreditId: Hex,
     isOffer: boolean
@@ -114,7 +113,6 @@ export class ChainLinkProposalStrategy
     for (const credit of this.term.creditAssets) {
       for (const collateral of this.term.collateralAssets) {
         result.push({
-          user,
           collateral,
           credit,
           creditAmount,
@@ -143,7 +141,6 @@ export class ChainLinkProposalStrategy
     isOffer: boolean,
   ): Promise<ChainLinkProposal[]> {
     const paramsArray = this.getProposalsParams(
-      user,
       creditAmount,
       utilizedCreditId,
       isOffer,
@@ -228,7 +225,6 @@ export type CreateChainLinkElasticProposalBatchParams = CreateChainLinkElasticPr
 
 export const createChainLinkProposals = (
   strategy: Strategy,
-  user: UserWithNonceManager,
   address: AddressString,
   creditAmount: string,
   config: Config
@@ -256,7 +252,6 @@ export const createChainLinkProposals = (
 					loanContract: new SimpleLoanContract(config),
 				},
 				params: {
-					user,
 					creditAmount: BigInt(creditAmount),
 					ltv: strategy.terms.ltv,
 					apr: strategy.terms.apr,
