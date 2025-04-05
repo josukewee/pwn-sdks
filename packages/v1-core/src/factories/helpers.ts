@@ -92,8 +92,6 @@ export const getLendingCommonProposalFields = async (
 			apr[getUniqueCreditCollateralKey(credit, collateral)]) ||
 		(apr as number);
 
-	const interestAmount = creditAmount * (BigInt(aprValue) / BigInt(1e2));
-
 	return {
 		nonce,
 		nonceSpace,
@@ -117,7 +115,7 @@ export const getLendingCommonProposalFields = async (
 
 		refinancingLoanId: 0n, // creating new loan
 
-		fixedInterestAmount: interestAmount,
+		fixedInterestAmount: 0n,
 		accruingInterestAPR: aprValue,
 
 		expiration,
