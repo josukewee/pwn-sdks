@@ -286,6 +286,7 @@ export const createElasticProposals = (
 	address: AddressString,
 	creditAmount: string,
 	config: Config,
+	isOffer = true,
 ): ProposalParamWithDeps<ImplementedProposalTypes>[] => {
 	const proposals: ProposalParamWithDeps<ImplementedProposalTypes>[] = [];
 
@@ -320,7 +321,7 @@ export const createElasticProposals = (
 					expirationDays: strategy.terms.expirationDays,
 					utilizedCreditId: utilizedCreditId,
 					minCreditAmountPercentage: strategy.terms.minCreditAmountPercentage,
-					isOffer: true,
+					isOffer,
 					relatedStrategyId: strategy.id,
 					collateral: collateralAsset,
 					credit: creditAsset,

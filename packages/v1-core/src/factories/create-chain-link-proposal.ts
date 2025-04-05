@@ -99,6 +99,7 @@ export class ChainLinkProposalStrategy
         loanToValue: formatLtvForContract(ltv),
         minCreditAmount,
         chainId: params.collateral.chainId,
+        isOffer: params.isOffer,
       },
       params.collateral.chainId
     );
@@ -201,7 +202,7 @@ export const createChainLinkElasticProposal = async (
 		ltv: params.ltv,
 		expirationDays: params.expirationDays,
 		minCreditAmountPercentage: params.minCreditAmountPercentage,
-		relatedStrategyId: params.relatedStrategyId
+		relatedStrategyId: params.relatedStrategyId,
 	};
 
   const strategy = new ChainLinkProposalStrategy(
@@ -227,7 +228,8 @@ export const createChainLinkProposals = (
   strategy: Strategy,
   address: AddressString,
   creditAmount: string,
-  config: Config
+  config: Config,
+  isOffer = true,
 ) => {
 	const proposals: ProposalParamWithDeps<ImplementedProposalTypes>[] = [];
 
@@ -261,10 +263,10 @@ export const createChainLinkProposals = (
 					expirationDays: strategy.terms.expirationDays,
 					utilizedCreditId: utilizedCreditId,
 					minCreditAmountPercentage: strategy.terms.minCreditAmountPercentage,
-					isOffer: true,
 					relatedStrategyId: strategy.id,
 					collateral: collateralAsset,
 					credit: creditAsset,
+					isOffer,
 				}
 			});
 		}

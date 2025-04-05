@@ -15,12 +15,17 @@ import {
 } from "@pwndao/sdk-core";
 import { SupportedProtocol } from "@pwndao/sdk-core";
 import type { Config } from "@wagmi/core";
+import invariant from "ts-invariant";
 import { LBTC, PYUSD } from "../addresses.js";
+import { Proposal, type ProposalWithSignature } from "../index.js";
 import { ChainLinkProposal } from "../models/proposals/chainlink-proposal.js";
 import { ProposalType } from "../models/proposals/proposal-base.js";
 import { convertNameIntoDenominator } from "../utils/chainlink-feeds.js";
 import { makeProposals } from "./make-proposals.js";
-import type { ImplementedProposalTypes, ProposalParamWithDeps } from "./types.js";
+import type {
+	ImplementedProposalTypes,
+	ProposalParamWithDeps,
+} from "./types.js";
 
 describe("Test make proposals", () => {
 	const collateralAddress = LBTC[SupportedChain.Ethereum] as AddressString;
@@ -52,11 +57,12 @@ describe("Test make proposals", () => {
 			getCollateralAmount: vi.fn().mockImplementation(() => 0n),
 			createOnChainProposal: vi.fn().mockImplementation((p) => p),
 			getProposalHash: vi.fn().mockImplementation(() => "0x123"),
-			createMultiProposal: vi
-				.fn()
-				.mockImplementation((proposals) =>
-					proposals.map((p) => ({ ...p, signature: "0x456" })),
-				),
+			createMultiProposal: vi.fn().mockImplementation((proposals) =>
+				proposals.map((p: Record<string, unknown>) => ({
+					...p,
+					signature: "0x456",
+				})),
+			),
 		};
 
 		const loanContractMock = {
@@ -183,11 +189,12 @@ describe("Test make proposals", () => {
 			getCollateralAmount: vi.fn().mockImplementation(() => 0n),
 			createOnChainProposal: vi.fn().mockImplementation((p) => p),
 			getProposalHash: vi.fn().mockImplementation(() => "0x123"),
-			createMultiProposal: vi
-				.fn()
-				.mockImplementation((proposals) =>
-					proposals.map((p) => ({ ...p, signature: "0x456" })),
-				),
+			createMultiProposal: vi.fn().mockImplementation((proposals) =>
+				proposals.map((p: Record<string, unknown>) => ({
+					...p,
+					signature: "0x456",
+				})),
+			),
 		};
 
 		const loanContractMock = {
@@ -356,5 +363,103 @@ describe("Test make proposals", () => {
 		await expect(makeProposals(config, proposalParams, user)).rejects.toThrow(
 			"Not implemented for proposal type UnsupportedType",
 		);
+	});
+
+	it("should create proposals with isOffer = false (requests)", async () => {
+		const contractMock = {
+			getCollateralAmount: vi.fn().mockImplementation(() => 0n),
+			createOnChainProposal: vi.fn().mockImplementation((p) => p),
+			getProposalHash: vi.fn().mockImplementation(() => "0x123"),
+			createMultiProposal: vi.fn().mockImplementation((proposals) => {
+				for (const proposal of proposals) {
+					Object.assign(proposal, {
+						signature: "0x456",
+					});
+				}
+				return proposals;
+			}),
+		};
+
+		const loanContractMock = {
+			getLenderSpecHash: vi
+				.fn()
+				.mockImplementation(() => Promise.resolve(proposerSpecHash)),
+		};
+
+		const user = getMockUserWithNonceManager(user_address);
+		const config = {} as Config;
+
+		const proposalParams: ProposalParamWithDeps<ProposalType.ChainLink>[] = [
+			{
+				type: ProposalType.ChainLink,
+				params: {
+					collateral: getMockToken(SupportedChain.Ethereum, collateralAddress),
+					credit: getMockToken(SupportedChain.Ethereum, creditAddress),
+					creditAmount,
+					ltv: {
+						[getUniqueCreditCollateralKey(
+							getMockToken(SupportedChain.Ethereum, creditAddress),
+							getMockToken(SupportedChain.Ethereum, collateralAddress),
+						)]: Number(ltv),
+					},
+					apr: {
+						[getUniqueCreditCollateralKey(
+							getMockToken(SupportedChain.Ethereum, creditAddress),
+							getMockToken(SupportedChain.Ethereum, collateralAddress),
+						)]: apr,
+					},
+					duration: {
+						days: durationDays,
+						date: undefined,
+					},
+					expirationDays,
+					utilizedCreditId: generateAddress(),
+					minCreditAmountPercentage: 3,
+					relatedStrategyId: "1",
+					isOffer: false, // This is a request, not an offer
+				},
+				deps: {
+					api: {
+						persistProposal: vi.fn().mockImplementation((p) => p),
+						persistProposals: vi.fn().mockImplementation((p) => p),
+						updateNonces: vi.fn().mockImplementation((p) => p),
+					},
+					contract: contractMock,
+					loanContract: loanContractMock,
+				},
+			},
+		];
+
+		const proposals = await makeProposals(config, proposalParams, user);
+
+		expect(proposals).toHaveLength(1);
+		expect(contractMock.createMultiProposal).toHaveBeenCalled();
+		expect(loanContractMock.getLenderSpecHash).toHaveBeenCalledTimes(1);
+
+		// @ts-expect-error - ProposalWithSignature is not assignable to ChainLinkProposal
+		const proposal: Extract<ProposalWithSignature, ChainLinkProposal> = proposals[0];
+		expect(proposal.proposerSpecHash).toBe(proposerSpecHash);
+		expect(proposal.collateralAddress).toBe(collateralAddress);
+		expect(proposal.creditAddress).toBe(creditAddress);
+		expect(proposal.availableCreditLimit).toBe(creditAmount);
+		expect(proposal.minCreditAmount).toBe(3n * 10n ** (18n - 2n));
+		expect(proposal.accruingInterestAPR).toBe(apr);
+		expect(proposal.signature).toBe("0x456");
+		expect(proposal.nonce).toBe(0n);
+		expect(proposal.isOffer).toBe(false);
+
+		console.log(proposal);
+		// Verify ChainLink specific fields
+		expect(proposal.feedIntermediaryDenominations).toHaveLength(2);
+		expect(proposal.feedInvertFlags).toHaveLength(3);
+		expect(proposal.feedIntermediaryDenominations[0]).toBe(
+			convertNameIntoDenominator("USD"),
+		);
+		expect(proposal.feedIntermediaryDenominations[1]).toBe(
+			convertNameIntoDenominator("BTC"),
+		);
+		expect(proposal.feedInvertFlags[0]).toBe(false);
+		expect(proposal.feedInvertFlags[1]).toBe(true);
+		expect(proposal.feedInvertFlags[2]).toBe(true);
 	});
 });
