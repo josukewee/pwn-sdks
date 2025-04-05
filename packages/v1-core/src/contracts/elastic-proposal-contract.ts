@@ -25,11 +25,14 @@ export class ElasticProposalContract extends BaseProposalContract<ElasticProposa
 
 		const signature = await signTypedData(this.config, structToSign);
 
+		const merkleRoot = structToSign.message.multiproposalMerkleRoot;
+
 		return proposals.map((proposal) => ({
 			...proposal,
 			signature,
 			hash: proposal.hash,
 			isOnChain: false,
+			multiproposalMerkleRoot: merkleRoot,
 		}) as ProposalWithSignature);
 	}
 

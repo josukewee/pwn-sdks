@@ -1,4 +1,4 @@
-import { ChainLinkProposalContract, ElasticProposalContract } from "../contracts/index.js";
+import type { ChainLinkProposalContract, ElasticProposalContract } from "../contracts/index.js";
 import { ProposalType } from "../models/proposals/proposal-base.js"
 import type { Proposal } from "../models/strategies/types.js"
 import invariant from "ts-invariant";
