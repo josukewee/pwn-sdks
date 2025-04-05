@@ -6,6 +6,7 @@ import {
 	calculateCollateralAmountFungibleProposal,
 	calculateCollateralBasedOnLtv,
 	calculateCreditAmount,
+	calculateCreditBasedOnLtv,
 	calculateCreditPerCollateralUnit,
 } from "./calculations.js";
 
@@ -564,7 +565,7 @@ describe("Calculations package", () => {
 		 * 4. Precise numbers with extreme conditions
 		 */
 
-		// Test 1: Maximum amount + Minimum price + Extreme LTV + Maximum decimal difference
+		// Test 1: Maximum amount + Minimum price + Extreme LTV
 		const result1 = calculateCollateralBasedOnLtv(
 			"340282366920938463463374607431768211455", // Max safe amount (2^128 - 1)
 			BigInt(990000), // 99% LTV
@@ -680,5 +681,156 @@ describe("Calculations package", () => {
 				: BigInt(baseResult.toString()) - scaledResult;
 
 		expect(scalingDifference).toBeLessThanOrEqual(maxAllowedDifference);
+	});
+
+	describe("calculateCreditBasedOnLtv", () => {
+		it("should calculate credit amount correctly for real-world ETH-USDC scenario", () => {
+			// Example: 1 ETH as collateral at 70% LTV
+			// 1. Collateral USD value = 1 × $1,791.43 = $1,791.43
+			// 2. Available credit USD = $1,791.43 × 0.7 = $1,254.001
+			// 3. Required USDC = $1,254.001 / $1.01 ≈ 1,241.58515841584 USDC
+			const collateralAmount = "1000000000000000000"; // 1 ETH
+			const ltv = BigInt(700000); // 70% LTV (700000 = 70% with 6 decimal places)
+			const collateralPrice = 1791.43; // ETH price
+			const creditPrice = 1.01; // USDC price
+
+			const result = calculateCreditBasedOnLtv(
+				collateralAmount,
+				ltv,
+				collateralPrice,
+				creditPrice,
+			);
+
+			const expectedCredit = "1241585148514851485100"; // ~1241,585148514851485100 USDC in wei (18 decimals)
+			expect((result / BigInt(10 ** 6)).toString()).toBe(expectedCredit);
+		});
+
+		it("should handle extreme price ratios correctly", () => {
+			// Scenario: Very expensive collateral (BTC) vs cheap credit token (USDC)
+			// 1. Collateral USD = 1 × $100,000 = $100,000
+			// 2. Available credit USD = $100,000 × 0.7 = $70,000
+			// 3. Required USDC = $70,000 / $1 = 70,000 USDC
+			const result1 = calculateCreditBasedOnLtv(
+				"1000000000000000000", // 1 BTC
+				BigInt(700000), // 70% LTV
+				100000, // BTC price $100,000
+				1, // USDC price $1
+			);
+			expect((result1 / BigInt(10 ** 6)).toString()).toBe("70000000000000000000000"); // 70,000 USDC in wei (18 decimals)
+
+			// Scenario: Very cheap collateral (SHIB) vs expensive credit token (WBTC)
+			// 1. Collateral USD = 1,000,000 × $0.00001 = $10
+			// 2. Available credit USD = $10 × 0.7 = $7
+			// 3. Required WBTC = $7 / $100,000 = 0.00007 WBTC
+			const result2 = calculateCreditBasedOnLtv(
+				"1000000000000000000000000", // 1M SHIB
+				BigInt(700000), // 70% LTV
+				0.00001, // SHIB price
+				100000, // WBTC price
+			);
+			expect((result2 / BigInt(10 ** 6)).toString()).toBe("70000000000000"); // 0.00007 WBTC in wei (18 decimals)
+		});
+
+		it("should handle very small amounts correctly", () => {
+			// Example: 0.000001 ETH to USDC at 70% LTV
+			// 1. Collateral USD = 0.000001 × $1,791.43 = $0.00179143
+			// 2. Available credit USD = $0.00179143 × 0.7 = $0.001254001
+			// 3. Required USDC = $0.001254001 / $1.01 ≈ 0.001241585 USDC
+			const result = calculateCreditBasedOnLtv(
+				"1000000000000", // 0.000001 ETH
+				BigInt(700000), // 70% LTV
+				1791.43, // ETH price
+				1.01, // USDC price
+			);
+			expect((result / BigInt(10 ** 6)).toString()).toBe("1241585148514851"); // ~0.001241585 USDC in wei (18 decimals)
+			expect(result.toString()).not.toBe("0"); // Ensure precision is maintained even for tiny amounts
+		});
+
+		it("should handle extreme LTV values correctly", () => {
+			const collateralAmount = "1000000000000000000"; // 1 ETH
+			const collateralPrice = 1791.43; // ETH price
+			const creditPrice = 1.01; // USDC price
+
+			// Test minimum LTV (1%)
+			// 1. Collateral USD = 1 × $1,791.43 = $1,791.43
+			// 2. Available credit USD = $1,791.43 × 0.01 = $17.9143
+			// 3. Required USDC = $17.9143 / $1.01 ≈ 17.7369 USDC
+			const result1 = calculateCreditBasedOnLtv(
+				collateralAmount,
+				BigInt(10000), // 1% LTV
+				collateralPrice,
+				creditPrice,
+			);
+			expect((result1 / BigInt(10 ** 6)).toString()).toBe("17736930693069306931"); // ~17.7369 USDC in wei (18 decimals)
+
+			// Test maximum practical LTV (99%)
+			// 1. Collateral USD = 1 × $1,791.43 = $1,791.43
+			// 2. Available credit USD = $1,791.43 × 0.99 = $1,773.5157
+			// 3. Required USDC = $1,773.5157 / $1.01 ≈ 1,755.9561 USDC
+			const result2 = calculateCreditBasedOnLtv(
+				collateralAmount,
+				BigInt(990000), // 99% LTV
+				collateralPrice,
+				creditPrice,
+			);
+			expect((result2 / BigInt(10 ** 6)).toString()).toBe("1755956138613861386100"); // ~1,755.9561 USDC in wei (18 decimals)
+
+			// Verify that higher LTV results in more credit
+			expect(BigInt(result2.toString())).toBeGreaterThan(
+				BigInt(result1.toString()),
+			);
+		});
+
+		it("should maintain consistency with price scaling", () => {
+			/**
+			 * Price Scaling Property:
+			 * If both prices are scaled by the same factor k, the result should remain unchanged
+			 * because: (collateralAmount × (collateralPrice × k) × ltv) / (creditPrice × k)
+			 * simplifies to: (collateralAmount × collateralPrice × ltv) / creditPrice
+			 */
+
+			// Base case
+			const baseResult = calculateCreditBasedOnLtv(
+				"1000000000000000000", // 1 ETH
+				BigInt(700000), // 70% LTV
+				1791.43, // ETH price
+				1.01, // USDC price
+			);
+
+			// Same scenario but all prices multiplied by 1000
+			const scaledResult = calculateCreditBasedOnLtv(
+				"1000000000000000000", // 1 ETH
+				BigInt(700000), // 70% LTV
+				1791430, // ETH price * 1000
+				1010, // USDC price * 1000
+			);
+
+			// The credit amount should be identical since price ratio remains constant
+			expect(baseResult.toString()).toBe(scaledResult.toString());
+		});
+
+		it("should handle invalid LTV values", () => {
+			// Test zero LTV
+			expect(() =>
+				calculateCreditBasedOnLtv(
+					"1000000000000000000", // 1 ETH
+					BigInt(0), // 0% LTV
+					1791.43, // ETH price
+					1.01, // USDC price
+				),
+			).toThrow("LTV cannot be zero or negative");
+
+			// Test 100% LTV
+			// 1. Collateral USD = 1 × $1,791.43 = $1,791.43
+			// 2. Available credit USD = $1,791.43 × 1.0 = $1,791.43
+			// 3. Required USDC = $1,791.43 / $1.01 ≈ 1,773.6930693 USDC
+			const result = calculateCreditBasedOnLtv(
+				"1000000000000000000", // 1 ETH
+				BigInt(1000000), // 100% LTV
+				1791.43, // ETH price
+				1.01, // USDC price
+			);
+			expect((result / BigInt(10 ** 6)).toString()).toBe("1773693069306930693100"); // ~1,773.693069 USDC in wei (18 decimals)
+		});
 	});
 });
