@@ -1,26 +1,36 @@
-import { useQuery } from "@tanstack/vue-query";
-import { useConfig } from "@wagmi/vue"
-import { getCollateralAmount, IProposalSpecificParams } from "@pwndao/v1-core";
+import {
+	type IProposalSpecificParams,
+	getCollateralAmount,
+} from "@pwndao/v1-core";
 import { ChainLinkProposalContract } from "@pwndao/v1-core";
 import { ElasticProposalContract } from "@pwndao/v1-core";
 import { ProposalType } from "@pwndao/v1-core";
-import { computed, reactive, toRefs } from "vue";
+import { useQuery } from "@tanstack/vue-query";
+import { useConfig } from "@wagmi/vue";
+import type { MaybeRefOrGetter } from "vue";
+import { computed, toValue } from "vue";
 
-export const useGetCollateralAmount = (params: IProposalSpecificParams) => {
-    const reactiveParams = reactive(params);
-    const { type, availableCreditLimit } = toRefs(reactiveParams);
-    
-    const config = useConfig()
-    const contract = computed(() => {
-        if (type.value === ProposalType.Elastic) {
-            return new ElasticProposalContract(config)
-        } else {
-            return new ChainLinkProposalContract(config)
-        }
-    })
+export const useGetCollateralAmount = (
+	params: MaybeRefOrGetter<IProposalSpecificParams>,
+) => {
+	const proposalType = computed(() => toValue(params).type);
+	const config = useConfig();
+	const contract = computed(() => {
+		if (proposalType.value === ProposalType.Elastic) {
+			return new ElasticProposalContract(config);
+		}
+		return new ChainLinkProposalContract(config);
+	});
 
-    return useQuery({
-        queryKey: ["get-proposal-collateral-amount", reactiveParams],
-        queryFn: () => getCollateralAmount(contract.value, availableCreditLimit.value, reactiveParams),
-    });
+	return useQuery({
+		queryKey: ["get-proposal-collateral-amount", params],
+		queryFn: ({ queryKey }) => {
+			const { availableCreditLimit } = queryKey[1] as IProposalSpecificParams;
+			return getCollateralAmount(
+				contract.value,
+				availableCreditLimit,
+				queryKey[1] as IProposalSpecificParams,
+			);
+		},
+	});
 };
