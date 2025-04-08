@@ -5,13 +5,14 @@ import {
 import { ChainLinkProposalContract } from "@pwndao/v1-core";
 import { ElasticProposalContract } from "@pwndao/v1-core";
 import { ProposalType } from "@pwndao/v1-core";
-import { useQuery } from "@tanstack/vue-query";
+import { useQuery, type UseQueryOptions } from "@tanstack/vue-query";
 import { useConfig } from "@wagmi/vue";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, toValue } from "vue";
 
 export const useGetCollateralAmount = (
 	params: MaybeRefOrGetter<IProposalSpecificParams>,
+	options?: Omit<UseQueryOptions<bigint, Error, bigint, string[]>, "queryKey" | "queryFn">,
 ) => {
 	const proposalType = computed(() => toValue(params).type);
 	const config = useConfig();
@@ -32,5 +33,6 @@ export const useGetCollateralAmount = (
 				queryKey[1] as IProposalSpecificParams,
 			);
 		},
+		...options,
 	});
 };
