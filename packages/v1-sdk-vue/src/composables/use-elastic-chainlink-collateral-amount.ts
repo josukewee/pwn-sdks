@@ -4,13 +4,15 @@ import { getCollateralAmount, IProposalSpecificParams } from "@pwndao/v1-core";
 import { ChainLinkProposalContract } from "@pwndao/v1-core";
 import { ElasticProposalContract } from "@pwndao/v1-core";
 import { ProposalType } from "@pwndao/v1-core";
-import { computed } from "vue";
-
+import { computed, reactive, toRefs } from "vue";
 
 export const useGetCollateralAmount = (params: IProposalSpecificParams) => {
+    const reactiveParams = reactive(params);
+    const { type, availableCreditLimit } = toRefs(reactiveParams);
+    
     const config = useConfig()
     const contract = computed(() => {
-        if (params.type === ProposalType.Elastic) {
+        if (type.value === ProposalType.Elastic) {
             return new ElasticProposalContract(config)
         } else {
             return new ChainLinkProposalContract(config)
@@ -18,7 +20,7 @@ export const useGetCollateralAmount = (params: IProposalSpecificParams) => {
     })
 
     return useQuery({
-        queryKey: ["get-proposal-collateral-amount", params],
-        queryFn: () => getCollateralAmount(contract.value, params.availableCreditLimit, params),
+        queryKey: ["get-proposal-collateral-amount", reactiveParams],
+        queryFn: () => getCollateralAmount(contract.value, availableCreditLimit.value, reactiveParams),
     });
 };
