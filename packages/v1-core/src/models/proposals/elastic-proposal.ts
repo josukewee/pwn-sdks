@@ -102,6 +102,7 @@ export class ElasticProposal implements IElasticProposalBase {
 		this.chainId = chainId;
 
 		this.relatedStrategyId = proposal.relatedStrategyId;
+		this.sourceOfFunds = proposal.sourceOfFunds;
 	}
 
 	creditPerCollateralUnit: bigint;
@@ -132,4 +133,5 @@ export class ElasticProposal implements IElasticProposalBase {
 	loanContract: AddressString;
 
 	relatedStrategyId?: string;
+	sourceOfFunds: AddressString | null;
 }

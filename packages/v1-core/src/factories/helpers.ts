@@ -34,6 +34,7 @@ type CommonProposalFieldsParams = {
 	apr: number | Record<string, number>;
 	expiration: number;
 	loanContract: AddressString;
+	sourceOfFunds: AddressString | null;
 };
 
 export interface ILoanContract {
@@ -74,7 +75,10 @@ export const getLendingCommonProposalFields = async (
 		expiration,
 		loanContract,
 		relatedStrategyId,
+		sourceOfFunds,
 	} = params;
+
+	console.log('sourceOfFunds', sourceOfFunds);
 
 	const proposerSpecHash = await deps.loanContract.getLenderSpecHash(
 		{
@@ -123,5 +127,6 @@ export const getLendingCommonProposalFields = async (
 		loanContract,
 
 		relatedStrategyId,
+		sourceOfFunds,
 	};
 };

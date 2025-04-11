@@ -5,6 +5,7 @@ import type {
 import type {
 	AddressString,
 	BaseAsset,
+	ERC20TokenLike,
 	Hex,
 	SupportedChain,
 	Token,
@@ -15,8 +16,10 @@ import type {
 } from "../models/strategies/types.js";
 
 export type BaseTerm = {
+	// TODO if we wanna enable using pool hooks for collateral, we should also allow
+	//  PoolToken here, alongside the ERC20 and NFTs
 	collateral: Token;
-	credit: Token;
+	credit: ERC20TokenLike;
 	creditAmount: bigint;
 	ltv: Record<string, number>;
 	apr: Record<string, number>;
@@ -33,6 +36,7 @@ export type BaseTerm = {
 	utilizedCreditId: Hex;
 	relatedStrategyId?: string;
 	isOffer: boolean;
+	sourceOfFunds: AddressString | null;
 };
 
 export interface IServerAPI {

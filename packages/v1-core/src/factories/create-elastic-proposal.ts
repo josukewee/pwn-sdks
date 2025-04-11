@@ -3,6 +3,7 @@ import type { Hex } from "@pwndao/sdk-core";
 import {
 	getLoanContractAddress,
 	getUniqueCreditCollateralKey,
+	isPoolToken,
 } from "@pwndao/sdk-core";
 import type { Config } from "@wagmi/core";
 import invariant from "ts-invariant";
@@ -116,6 +117,7 @@ export class ElasticProposalStrategy
 				expiration,
 				loanContract: getLoanContractAddress(params.collateral.chainId),
 				relatedStrategyId: this.term.relatedStrategyId,
+				sourceOfFunds: params.sourceOfFunds,
 			},
 			{
 				contract: contract,
@@ -155,6 +157,7 @@ export class ElasticProposalStrategy
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
 		isOffer: boolean,
+		sourceOfFunds: AddressString | null,
 	): CreateElasticProposalParams[] {
 		const result: CreateElasticProposalParams[] = [];
 		for (const credit of this.term.creditAssets) {
@@ -175,6 +178,7 @@ export class ElasticProposalStrategy
 					minCreditAmountPercentage: this.term.minCreditAmountPercentage,
 					relatedStrategyId: this.term.relatedStrategyId,
 					isOffer,
+					sourceOfFunds,
 				});
 			}
 		}
@@ -195,11 +199,13 @@ export class ElasticProposalStrategy
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
 		isOffer: boolean,
+		sourceOfFunds: AddressString | null,
 	): Promise<ElasticProposal[]> {
 		const paramsArray = this.getProposalsParams(
 			creditAmount,
 			utilizedCreditId,
 			isOffer,
+			sourceOfFunds,
 		);
 		const result: ElasticProposal[] = [];
 
@@ -272,6 +278,7 @@ export const createElasticProposal = async (
 		params.creditAmount,
 		params.utilizedCreditId,
 		params.isOffer,
+		params.sourceOfFunds,
 	);
 	return proposals[0];
 };
@@ -323,6 +330,7 @@ export const createElasticProposals = (
 					minCreditAmountPercentage: strategy.terms.minCreditAmountPercentage,
 					isOffer,
 					relatedStrategyId: strategy.id,
+					sourceOfFunds: isPoolToken(creditAsset) ? creditAsset.underlyingAddress : null,
 					collateral: collateralAsset,
 					credit: creditAsset,
 				},

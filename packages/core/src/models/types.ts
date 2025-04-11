@@ -6,5 +6,5 @@ export type Token = ERC20Token | NFT | FungibleNFT;
 export type ERC20TokenLike = ERC20Token | PoolToken;
 
 export const isPoolToken = (token: Partial<Token>): token is PoolToken => {
-	return token instanceof PoolToken;
+	return token instanceof PoolToken || "underlyingAddress" in token;
 };

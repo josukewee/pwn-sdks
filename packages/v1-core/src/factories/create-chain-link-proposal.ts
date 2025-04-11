@@ -15,7 +15,7 @@ import type {
   UserWithNonceManager,
 } from '@pwndao/sdk-core';
 import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
-import { getLoanContractAddress, getUniqueCreditCollateralKey } from '@pwndao/sdk-core';
+import { getLoanContractAddress, getUniqueCreditCollateralKey, isPoolToken, PoolToken } from '@pwndao/sdk-core';
 import { ChainLinkProposalContract, type IProposalChainLinkContract } from '../contracts/chain-link-proposal-contract.js';
 import { type ChainsWithChainLinkFeedSupport, getFeedData } from '../utils/chainlink-feeds.js';
 import invariant from 'ts-invariant';
@@ -62,7 +62,11 @@ export class ChainLinkProposalStrategy
     invariant(ltv, "LTV is undefined");
 
     // Get feed data for ChainLink proposal
-    const feedData = getFeedData(params.collateral.chainId as ChainsWithChainLinkFeedSupport, params.collateral.address, params.credit.address);
+    const feedData = getFeedData(
+      params.collateral.chainId as ChainsWithChainLinkFeedSupport, 
+      params.collateral.address, 
+      ("underlyingAddress" in params.credit) && params.credit.underlyingAddress ? params.credit.underlyingAddress : params.credit.address
+    );
     invariant(feedData, "We did not find a suitable price feed. Create classic elastic proposal instead.");
 
     // Calculate min credit amount using the shared utility
@@ -83,6 +87,7 @@ export class ChainLinkProposalStrategy
         expiration,
         loanContract: getLoanContractAddress(params.collateral.chainId),
         relatedStrategyId: this.term.relatedStrategyId,
+        sourceOfFunds: params.sourceOfFunds,
       },
       {
         contract: contract,
@@ -108,7 +113,8 @@ export class ChainLinkProposalStrategy
   getProposalsParams(
     creditAmount: bigint,
     utilizedCreditId: Hex,
-    isOffer: boolean
+    isOffer: boolean,
+    sourceOfFunds: AddressString | null
   ): CreateChainLinkElasticProposalParams[] {
     const result: CreateChainLinkElasticProposalParams[] = [];
     for (const credit of this.term.creditAssets) {
@@ -128,6 +134,7 @@ export class ChainLinkProposalStrategy
 					minCreditAmountPercentage: this.term.minCreditAmountPercentage,
 					relatedStrategyId: this.term.id,
 					isOffer,
+          sourceOfFunds,
 				});
 			}
 		}
@@ -140,11 +147,13 @@ export class ChainLinkProposalStrategy
     creditAmount: bigint,
     utilizedCreditId: Hex,
     isOffer: boolean,
+    sourceOfFunds: AddressString | null
   ): Promise<ChainLinkProposal[]> {
     const paramsArray = this.getProposalsParams(
       creditAmount,
       utilizedCreditId,
       isOffer,
+      sourceOfFunds,
     );
     const result: ChainLinkProposal[] = [];
 
@@ -214,7 +223,8 @@ export const createChainLinkElasticProposal = async (
     user,
     params.creditAmount,
     params.utilizedCreditId,
-    params.isOffer
+    params.isOffer,
+    params.sourceOfFunds,
   );
   return proposals[0];
 };
@@ -267,6 +277,7 @@ export const createChainLinkProposals = (
 					collateral: collateralAsset,
 					credit: creditAsset,
 					isOffer,
+					sourceOfFunds: isPoolToken(creditAsset) ? creditAsset.underlyingAddress : null,
 				}
 			});
 		}
