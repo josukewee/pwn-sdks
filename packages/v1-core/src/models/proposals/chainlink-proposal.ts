@@ -74,6 +74,7 @@ export class ChainLinkProposal implements IOracleProposalBase {
 		this.type = ProposalType.ChainLink;
 		this.chainId = chainId;
 		this.relatedStrategyId = proposal.relatedStrategyId;
+		this.sourceOfFunds = proposal.sourceOfFunds;
 	}
 
 	createProposalStruct(): V1_3SimpleLoanElasticChainlinkProposalStruct {
@@ -136,4 +137,5 @@ export class ChainLinkProposal implements IOracleProposalBase {
 
 	chainId: SupportedChain;
 	relatedStrategyId?: string;
+	sourceOfFunds: AddressString | null;
 }

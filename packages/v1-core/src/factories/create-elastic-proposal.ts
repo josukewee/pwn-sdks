@@ -116,6 +116,7 @@ export class ElasticProposalStrategy
 				expiration,
 				loanContract: getLoanContractAddress(params.collateral.chainId),
 				relatedStrategyId: this.term.relatedStrategyId,
+				sourceOfFunds: params.sourceOfFunds,
 			},
 			{
 				contract: contract,
@@ -155,6 +156,7 @@ export class ElasticProposalStrategy
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
 		isOffer: boolean,
+		sourceOfFunds: AddressString | null,
 	): CreateElasticProposalParams[] {
 		const result: CreateElasticProposalParams[] = [];
 		for (const credit of this.term.creditAssets) {
@@ -175,6 +177,7 @@ export class ElasticProposalStrategy
 					minCreditAmountPercentage: this.term.minCreditAmountPercentage,
 					relatedStrategyId: this.term.relatedStrategyId,
 					isOffer,
+					sourceOfFunds,
 				});
 			}
 		}
@@ -195,11 +198,13 @@ export class ElasticProposalStrategy
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
 		isOffer: boolean,
+		sourceOfFunds: AddressString | null,
 	): Promise<ElasticProposal[]> {
 		const paramsArray = this.getProposalsParams(
 			creditAmount,
 			utilizedCreditId,
 			isOffer,
+			sourceOfFunds,
 		);
 		const result: ElasticProposal[] = [];
 
@@ -272,6 +277,7 @@ export const createElasticProposal = async (
 		params.creditAmount,
 		params.utilizedCreditId,
 		params.isOffer,
+		params.sourceOfFunds,
 	);
 	return proposals[0];
 };
@@ -311,6 +317,7 @@ export const createElasticProposals = (
 					contract: new ElasticProposalContract(config),
 					loanContract: new SimpleLoanContract(config),
 				},
+				// TODO how to make sourceOfFunds work here?
 				params: {
 					creditAmount: BigInt(creditAmount),
 					ltv: strategy.terms.ltv,

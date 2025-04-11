@@ -79,35 +79,35 @@ const MAINNET_CONTRACTS: V1_3_Contracts = {
 const ARBITRUM_CONTRACTS: V1_3_Contracts = {
 	...PWN_V1_3_CONTRACTS,
 	tokenBundlerContract: "0x448E3D0a4BAa00FE511a03E7B27177AeDE6d9636",
-	pwnSimpleLoanElasticChainlinkProposal: "0x3b252fD3B958d03C2861DA045ca8A418E7155234"
+	pwnSimpleLoanElasticChainlinkProposal: "0xc566994F7c9D65C58a8f0C16F91b00Da6aE32BB6"
 };
 
 // Optimism contracts
 const OPTIMISM_CONTRACTS: V1_3_Contracts = {
 	...PWN_V1_3_CONTRACTS,
 	tokenBundlerContract: "0x43Ffd9dF079451Fe7D16Ac2c51E13DF2a173B71E",
-	pwnSimpleLoanElasticChainlinkProposal: "0x983b0916dBA60F58Ea3E4190549DFD7a0c8aF7b4"
+	pwnSimpleLoanElasticChainlinkProposal: "0xC267A16836D475561b37e7166ABeB92d876C8A3c"
 };
 
 // Base contracts
 const BASE_CONTRACTS: V1_3_Contracts = {
 	...PWN_V1_3_CONTRACTS,
 	tokenBundlerContract: "0x6fD3f5439aB1C103599385929d5f4c19acdBd264",
-	pwnSimpleLoanElasticChainlinkProposal: "0x0dFf6CA171A1A7C7dE14826feB823386D82d1b36",
+	pwnSimpleLoanElasticChainlinkProposal: "0xB6E4B8Ba8E26ac8d4979a8227DAda26bD3Ac9A10",
 };
 
 // Polygon contracts
 const POLYGON_CONTRACTS: V1_3_Contracts = {
 	...PWN_V1_3_CONTRACTS,
 	tokenBundlerContract: "0xe52405604bf644349f57b36ca6e85cf095fab8da",
-	pwnSimpleLoanElasticChainlinkProposal: "0x0FAbfAa5376625F07b954a5ad9b987a6b0f39E8F",
+	pwnSimpleLoanElasticChainlinkProposal: "0x5A8164910e995781C154fb092653752cE6BCDCA7",
 };
 
 // Gnosis contracts
 const GNOSIS_CONTRACTS: V1_3_Contracts = {
 	...PWN_V1_3_CONTRACTS,
 	tokenBundlerContract: "0x431131622e088Fb0F9828Ca05b62210fc9eDcC04",
-	pwnSimpleLoanElasticChainlinkProposal: "0x116A5E7A95883973de303122025B4Af23512F315",
+	pwnSimpleLoanElasticChainlinkProposal: "0x1719591db6AD58643aD4804eF8C2f2E51768C30E",
 };
 
 // Worldchain contracts
@@ -121,7 +121,7 @@ const WORLDCHAIN_CONTRACTS: V1_3_Contracts = {
 const BSC_CONTRACTS: V1_3_Contracts = {
 	...PWN_V1_3_CONTRACTS,
 	tokenBundlerContract: "0x4A75a527E97d853109aA6998a2B9E45a87A31e9f",
-	pwnSimpleLoanElasticChainlinkProposal: "0x2d5F60E96442a45e9E3754412189ACaa3aA1AE3a",
+	pwnSimpleLoanElasticChainlinkProposal: "0x79E1D066131C93610475C9AAEe3De861A8Cd2B71",
 };
 
 const CRONOS_CONTRACTS: V1_3_Contracts = {
@@ -147,7 +147,7 @@ const UNICHAIN_CONSTANTS: V1_3_Contracts = {
 const SEPOLIA_CONTRACTS: V1_3_Contracts = {
 	...PWN_V1_3_CONTRACTS,
 	tokenBundlerContract: "0x448E3D0a4BAa0A0FE511a03E7B27177AeDE6d9636",
-	pwnSimpleLoanElasticChainlinkProposal: "0x39fd308D651F5add5A4826D12Bf92d9D91E732AC", // not deployed
+	pwnSimpleLoanElasticChainlinkProposal: "0xC46170F43b97faE1A8B507d6fdDaFfBb7527D61B",
 };
 
 // Unichain Sepolia contracts

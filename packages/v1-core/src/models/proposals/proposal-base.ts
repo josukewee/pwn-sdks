@@ -131,6 +131,9 @@ export interface ICommonProposalFields extends ProposalTerms, IProposalMisc {
 	 * Address of a loan contract that will create a loan from the proposal.
 	 */
 	loanContract: AddressString;
+	
+	// TODO should this be here or in IProposalBase?
+	sourceOfFunds: AddressString | null;
 }
 
 export interface IElasticProposalBase

@@ -39,6 +39,7 @@ export interface IProposalStrategy<
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
 		isOffer: boolean,
+		sourceOfFunds: AddressString | null,
 	): CreateElasticProposalParams[];
 
 	createLendingProposals(
@@ -46,6 +47,7 @@ export interface IProposalStrategy<
 		creditAmount: bigint,
 		utilizedCreditId: Hex,
 		isOffer: boolean,
+		sourceOfFunds: AddressString | null,
 	): Promise<T[]>;
 }
 
