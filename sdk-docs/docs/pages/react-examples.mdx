@@ -258,6 +258,91 @@ export default function StrategyCommitmentCreator({ strategy }: Props) {
 }
 ```
 
+## 4. Custom Authentication with useUserNonces
+
+When using World App's MiniKit for authentication instead of Wagmi, you can use the `useUserNonces` hook to manage user nonces across different chains. This is particularly useful when building mini apps for World App:
+
+```tsx
+import { useUserNonces } from '@pwndao/sdk-v1-react';
+import { SupportedChain } from '@pwndao/sdk-core';
+import { MiniKit } from '@worldcoin/minikit-js';
+import { useEffect, useState } from 'react';
+
+function WorldAppAuthComponent() {
+  const [address, setAddress] = useState<string>();
+  const chainIds = [SupportedChain.World, SupportedChain.Sepolia];
+  
+  useEffect(() => {
+    // Initialize MiniKit
+    MiniKit.install();
+  }, []);
+
+  // Get user address using MiniKit's Wallet Auth
+  const handleAuth = async () => {
+    if (!MiniKit.isInstalled()) {
+      console.error('Please open this app in World App');
+      return;
+    }
+
+    try {
+      const response = await MiniKit.walletAuth();
+      setAddress(response.address);
+    } catch (err) {
+      console.error('Authentication failed:', err);
+    }
+  };
+  
+  const { data: userWithNonces, isLoading, error } = useUserNonces(
+    address,
+    chainIds
+  );
+
+  if (!MiniKit.isInstalled()) {
+    return <div>Please open this app in World App</div>;
+  }
+
+  if (!address) {
+    return (
+      <button onClick={handleAuth}>
+        Authenticate with World App
+      </button>
+    );
+  }
+
+  if (isLoading) return <div>Loading user nonces...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      <h2>User Nonces</h2>
+      <div>Connected Address: {address}</div>
+      {userWithNonces && (
+        <div>
+          {chainIds.map(chainId => (
+            <div key={chainId}>
+              Chain {chainId}: Nonce {userWithNonces.nonces[chainId]}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+The `useUserNonces` hook is particularly useful when:
+- Building mini apps for World App using MiniKit
+- Need to track user nonces across multiple chains
+- Implementing custom authentication flows outside of Wagmi
+- Managing proposal sequences with proper nonce tracking
+
+The hook automatically handles:
+- Fetching user nonces for specified chains
+- Keeping nonces in sync across multiple chains
+- Caching nonce data using TanStack Query
+
+For more information about MiniKit integration, visit the [World App Mini Apps documentation](https://docs.world.org/mini-apps/quick-start/installing).
+
 ## Important Considerations
 
 1. **Multi-Proposal Support**
