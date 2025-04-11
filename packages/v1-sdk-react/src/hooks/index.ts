@@ -1,4 +1,5 @@
 export * from "./use-user-with-nonce";
+export * from "./use-user-nonces";
 export * from "./use-strategy";
 export * from "./use-strategies";
 export * from "./use-strategy-proposals";
