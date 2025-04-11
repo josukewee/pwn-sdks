@@ -191,6 +191,91 @@ const handleSubmit = async (e: Event) => {
 </template>
 ```
 
+## 4. Custom Authentication with useUserNonces
+
+When implementing World App's MiniKit for authentication instead of Wagmi, you can use the `useUserNonces` composable to manage user nonces across different chains. This is particularly useful when building mini apps for World App:
+
+```vue
+<script setup lang="ts">
+import { useUserNonces } from '@pwndao/sdk-v1-vue';
+import { SupportedChain } from '@pwndao/sdk-core';
+import { MiniKit } from '@worldcoin/minikit-js';
+import { ref, onMounted } from 'vue';
+
+// Reactive state for address
+const address = ref<string>();
+const chainIds = ref([SupportedChain.World, SupportedChain.Sepolia]);
+const isMinikitAvailable = ref(false);
+
+// Initialize MiniKit
+onMounted(() => {
+  MiniKit.install();
+  isMinikitAvailable.value = MiniKit.isInstalled();
+});
+
+// Handle World App authentication
+const handleAuth = async () => {
+  if (!isMinikitAvailable.value) {
+    console.error('Please open this app in World App');
+    return;
+  }
+
+  try {
+    const response = await MiniKit.walletAuth();
+    address.value = response.address;
+  } catch (err) {
+    console.error('Authentication failed:', err);
+  }
+};
+
+const { data: userWithNonces, isLoading, error } = useUserNonces(
+  address,
+  chainIds
+);
+</script>
+
+<template>
+  <div>
+    <div v-if="!isMinikitAvailable">
+      Please open this app in World App
+    </div>
+    <div v-else-if="!address">
+      <button @click="handleAuth">
+        Authenticate with World App
+      </button>
+    </div>
+    <div v-else>
+      <div v-if="isLoading">Loading user nonces...</div>
+      <div v-else-if="error">Error: {{ error.message }}</div>
+      <div v-else>
+        <h2>User Nonces</h2>
+        <div>Connected Address: {{ address }}</div>
+        <div v-if="userWithNonces">
+          <div v-for="chainId in chainIds" :key="chainId">
+            Chain {{ chainId }}: Nonce {{ userWithNonces.nonces[chainId] }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+The `useUserNonces` composable is designed for:
+- Building mini apps for World App using MiniKit
+- Tracking user nonces across multiple chains
+- Custom authentication flows outside of Wagmi
+- Managing proposal sequences with proper nonce tracking
+
+Key features:
+- Reactive nonce tracking for specified chains
+- Automatic nonce synchronization
+- TanStack Query integration for efficient caching
+- Type-safe implementation with full TypeScript support
+- Seamless integration with World App's MiniKit
+
+For more information about MiniKit integration, visit the [World App Mini Apps documentation](https://docs.world.org/mini-apps/quick-start/installing).
+
 ## Important Considerations
 
 1. **Multi-Proposal Support**

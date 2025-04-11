@@ -1,8 +1,7 @@
 import { type SupportedChain, User } from "@pwndao/sdk-core";
-import { API, getUserWithNonce } from "@pwndao/v1-core";
-import { useQuery } from "@tanstack/vue-query";
 import { useAccount } from "@wagmi/vue";
 import { type MaybeRefOrGetter, computed, toValue } from "vue";
+import { useUserNonces } from "./use-user-nonces";
 
 export const useUserWithNonce = (
 	chainIds: MaybeRefOrGetter<SupportedChain[]>,
@@ -14,21 +13,17 @@ export const useUserWithNonce = (
 		return new User(toValue(address) as `0x${string}`);
 	});
 
-	const queryIsEnabled = computed(() => !!user.value && !!_chainIds.value);
-
-	const { data, isLoading, error } = useQuery({
-		queryKey: ["user-with-nonce", user, _chainIds],
-		queryFn: ({ queryKey }) =>
-			getUserWithNonce(
-				queryKey[1] as User,
-				API,
-				queryKey[2] as SupportedChain[],
-			),
-		enabled: queryIsEnabled,
-	});
+	const {
+		data: userWithNonce,
+		isLoading,
+		error,
+	} = useUserNonces(
+		computed(() => user.value?.address),
+		_chainIds,
+	);
 
 	return {
-		userWithNonce: data,
+		userWithNonce,
 		isLoading,
 		error,
 	};

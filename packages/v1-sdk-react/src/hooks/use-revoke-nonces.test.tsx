@@ -30,11 +30,9 @@ describe("useRevokeNonces", () => {
 	});
 
 	it("should revoke nonces", async () => {
-		// Mock the contract instance that's created in the hook
 		const mockContractInstance = {};
 		vi.mocked(RevokedNonceContract).mockReturnValue(mockContractInstance as any);
 		
-		// Mock the revokeProposals function
 		vi.mocked(revokeProposals).mockResolvedValue("0x0");
 		
 		const { result } = renderHook(() => useRevokeNonces(), { wrapper });
