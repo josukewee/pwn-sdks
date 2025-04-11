@@ -10,15 +10,21 @@ export enum SupportedProtocol {
 }
 
 export class PoolToken extends ERC20Token {
+	_underlyingToken: ERC20Token;
+
 	constructor(
 		chainId: SupportedChain,
-		address: AddressString,
+		p_address: AddressString,
 		public underlyingAddress: AddressString,
 		decimals: number,
 		public protocol: SupportedProtocol,
 		name?: string,
 		symbol?: string,
 	) {
-		super(chainId, address, decimals, name, symbol);
+		super(chainId, p_address, decimals, name, symbol);
+
+		this._underlyingToken = new ERC20Token(chainId, underlyingAddress, decimals, name, symbol);
 	}
+
+	
 }

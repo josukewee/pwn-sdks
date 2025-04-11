@@ -3,6 +3,7 @@ import type { Hex } from "@pwndao/sdk-core";
 import {
 	getLoanContractAddress,
 	getUniqueCreditCollateralKey,
+	isPoolToken,
 } from "@pwndao/sdk-core";
 import type { Config } from "@wagmi/core";
 import invariant from "ts-invariant";
@@ -317,7 +318,6 @@ export const createElasticProposals = (
 					contract: new ElasticProposalContract(config),
 					loanContract: new SimpleLoanContract(config),
 				},
-				// TODO how to make sourceOfFunds work here?
 				params: {
 					creditAmount: BigInt(creditAmount),
 					ltv: strategy.terms.ltv,
@@ -330,6 +330,7 @@ export const createElasticProposals = (
 					minCreditAmountPercentage: strategy.terms.minCreditAmountPercentage,
 					isOffer,
 					relatedStrategyId: strategy.id,
+					sourceOfFunds: isPoolToken(creditAsset) ? creditAsset.underlyingAddress : null,
 					collateral: collateralAsset,
 					credit: creditAsset,
 				},

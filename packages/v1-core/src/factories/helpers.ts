@@ -80,14 +80,8 @@ export const getLendingCommonProposalFields = async (
 
 	console.log('sourceOfFunds', sourceOfFunds);
 
-	// TODO check if these isPoolToken checks works,
-	//  or we should rather perform something like
-	//  "underlyingAddress" in credit , when checking if it's a pool token
-	//  instead of calling instanceof PoolToken, as e.g. in the implementChainLinkProposal
-	//  it did not work correctly
 	const proposerSpecHash = await deps.loanContract.getLenderSpecHash(
 		{
-			// TODO let's just pass sourceOfFunds var here from above?
 			sourceOfFunds: isPoolToken(credit) ? credit.address : user.address,
 		},
 		params.collateral.chainId,

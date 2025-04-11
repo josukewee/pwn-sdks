@@ -21,8 +21,6 @@ export const makeProposals = async <T extends ImplementedProposalTypes>(
 
 	const proposals: ProposalWithHash[] = [];
 
-	console.log('proposalParams', proposalParams);
-
 	for (const proposalParam of proposalParams) {
 		switch (proposalParam.type) {
 			case ProposalType.Elastic: {

@@ -15,7 +15,7 @@ import type {
   UserWithNonceManager,
 } from '@pwndao/sdk-core';
 import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
-import { getLoanContractAddress, getUniqueCreditCollateralKey, PoolToken } from '@pwndao/sdk-core';
+import { getLoanContractAddress, getUniqueCreditCollateralKey, isPoolToken, PoolToken } from '@pwndao/sdk-core';
 import { ChainLinkProposalContract, type IProposalChainLinkContract } from '../contracts/chain-link-proposal-contract.js';
 import { type ChainsWithChainLinkFeedSupport, getFeedData } from '../utils/chainlink-feeds.js';
 import invariant from 'ts-invariant';
@@ -214,8 +214,6 @@ export const createChainLinkElasticProposal = async (
 		relatedStrategyId: params.relatedStrategyId,
 	};
 
-  console.log('dummyTerm', dummyTerm);
-
   const strategy = new ChainLinkProposalStrategy(
     dummyTerm,
     deps.contract as IProposalChainLinkContract,
@@ -251,8 +249,6 @@ export const createChainLinkProposals = (
     updateNonces: API.post.updateNonce,
   } as IProposalChainLinkAPIDeps;
 
-  // TODO how to make sourceOfFunds work here?
-
 	for (const creditAsset of strategy.terms.creditAssets) {
 		const utilizedCreditId = createUtilizedCreditId({
 			proposer: address,
@@ -281,6 +277,7 @@ export const createChainLinkProposals = (
 					collateral: collateralAsset,
 					credit: creditAsset,
 					isOffer,
+					sourceOfFunds: isPoolToken(creditAsset) ? creditAsset.underlyingAddress : null,
 				}
 			});
 		}
