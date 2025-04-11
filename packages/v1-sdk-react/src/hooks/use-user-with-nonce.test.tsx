@@ -40,8 +40,6 @@ describe('useUserWithNonce', () => {
 
     const { result } = renderHook(() => useUserWithNonce([SupportedChain.Sepolia]), { wrapper });
 
-    console.log(result.current);
-
     await waitFor(() => expect(result.current.userWithNonce).toBeDefined());
     
     expect(result.current.userWithNonce).toBeDefined();
