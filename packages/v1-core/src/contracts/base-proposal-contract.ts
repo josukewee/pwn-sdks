@@ -2,6 +2,8 @@ import { SimpleMerkleTree } from "@openzeppelin/merkle-tree";
 import {
 	type Config,
 	getAccount,
+	getPublicClient,
+	getWalletClient,
 	readContract,
 	signTypedData,
 	watchContractEvent,
@@ -14,9 +16,31 @@ import type {
 	ProposalWithHash,
 } from "src/index.js";
 import type { ProposalWithSignature } from "src/models/strategies/types.js";
-import type { Address, Chain, Hex } from "viem";
+import type { Address, Chain, Hex, Log, PublicClient } from "viem";
 import { SafeService } from "../safe/safe-service.js";
 import type { SafeConfig } from "../safe/types.js";
+
+const SAFE_ABI = [
+	{
+		inputs: [{ name: "message", type: "bytes" }],
+		name: "getMessageHash",
+		outputs: [{ name: "", type: "bytes32" }],
+		stateMutability: "view",
+		type: "function",
+	},
+	{
+		anonymous: false,
+		inputs: [{ indexed: true, name: "msgHash", type: "bytes32" }],
+		name: "SignMsg",
+		type: "event",
+	},
+] as const;
+
+interface SignMsgEvent {
+	args: {
+		msgHash: string;
+	};
+}
 
 export abstract class BaseProposalContract<TProposal extends Proposal>
 	implements IProposalContract<TProposal>
@@ -27,7 +51,8 @@ export abstract class BaseProposalContract<TProposal extends Proposal>
 		protected readonly config: Config,
 		safeConfig?: Partial<SafeConfig>,
 	) {
-		this.safeService = new SafeService(config, safeConfig);
+		const publicClient = getPublicClient(config) as PublicClient;
+		this.safeService = new SafeService(publicClient, config, safeConfig);
 	}
 
 	abstract getProposalHash(proposal: TProposal): Promise<Hex>;
@@ -66,6 +91,7 @@ export abstract class BaseProposalContract<TProposal extends Proposal>
 		const isSafe = await this.safeService.isSafeAddress(
 			account.address as Address,
 		);
+
 		if (!isSafe) {
 			return await signTypedData(this.config, {
 				domain,
@@ -76,14 +102,12 @@ export abstract class BaseProposalContract<TProposal extends Proposal>
 		}
 
 		// Handle Safe signature
-		const signature = await this.safeService.signTypedData(
+		return await this.safeService.signTypedData(
 			account.address as Address,
 			domain,
 			types,
 			message,
 		);
-
-		return signature;
 	}
 
 	protected async waitForSafeWalletOnchainSignature(
@@ -91,18 +115,9 @@ export abstract class BaseProposalContract<TProposal extends Proposal>
 		hash: Hex,
 		chainId: number,
 	): Promise<Hex> {
-		// Get message hash from Safe's compatibility fallback handler
 		const messageHash = await readContract(this.config, {
 			address: safeAddress,
-			abi: [
-				{
-					inputs: [{ name: "message", type: "bytes" }],
-					name: "getMessageHash",
-					outputs: [{ name: "", type: "bytes32" }],
-					stateMutability: "view",
-					type: "function",
-				},
-			],
+			abi: SAFE_ABI,
 			functionName: "getMessageHash",
 			args: [hash],
 			chainId,
@@ -110,19 +125,16 @@ export abstract class BaseProposalContract<TProposal extends Proposal>
 
 		return new Promise<Hex>((resolve) => {
 			const unwatch = watchContractEvent(this.config, {
-				abi: [
-					{
-						anonymous: false,
-						inputs: [{ indexed: true, name: "msgHash", type: "bytes32" }],
-						name: "SignMsg",
-						type: "event",
-					},
-				],
+				abi: SAFE_ABI,
 				address: safeAddress,
 				eventName: "SignMsg",
 				chainId,
-				onLogs(logs) {
-					const log = logs.find((_log) => _log.args.msgHash === messageHash);
+				onLogs(logs: Log[]) {
+					const log = logs.find(
+						(eventLog) =>
+							(eventLog as unknown as SignMsgEvent).args.msgHash ===
+							messageHash,
+					);
 					if (log) {
 						unwatch();
 						resolve("0x" as Hex);

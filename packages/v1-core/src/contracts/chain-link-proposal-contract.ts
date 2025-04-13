@@ -1,6 +1,8 @@
 import { getChainLinkProposalContractAddress } from "@pwndao/sdk-core";
 import type { Config } from "@wagmi/core";
+import { getAccount } from "@wagmi/core";
 import type { Hex } from "viem";
+import type { Address } from "viem";
 import type { IServerAPI } from "../factories/types.js";
 import {
 	ChainLinkProposal,
@@ -105,6 +107,11 @@ export class ChainLinkProposalContract
 	async createOnChainProposal(
 		proposal: ChainLinkProposal,
 	): Promise<ProposalWithSignature> {
+		const account = getAccount(this.config);
+		const isSafe = account?.address
+			? await this.safeService.isSafeAddress(account.address as Address)
+			: false;
+
 		const proposalHash =
 			await writePwnSimpleLoanElasticChainlinkProposalMakeProposal(
 				this.config,
@@ -114,6 +121,11 @@ export class ChainLinkProposalContract
 					args: [proposal.createProposalStruct()],
 				},
 			);
+
+		// If using a Safe wallet, wait for transaction confirmation
+		if (isSafe) {
+			await this.safeService.waitForTransaction(proposalHash);
+		}
 
 		return Object.assign(proposal, {
 			signature: null, // on-chain proposals does not have signature
