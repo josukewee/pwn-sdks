@@ -1,8 +1,9 @@
-import {
-	getChainLinkProposalContractAddress,
-} from "@pwndao/sdk-core";
-import { signTypedData } from "@wagmi/core";
+import { getChainLinkProposalContractAddress } from "@pwndao/sdk-core";
+import type { Config } from "@wagmi/core";
+import { getAccount } from "@wagmi/core";
 import type { Hex } from "viem";
+import type { Address } from "viem";
+import type { IServerAPI } from "../factories/types.js";
 import {
 	ChainLinkProposal,
 	type IProposalContract,
@@ -12,28 +13,47 @@ import {
 	readPwnSimpleLoanElasticChainlinkProposalGetProposalHash,
 	writePwnSimpleLoanElasticChainlinkProposalMakeProposal,
 } from "../index.js";
-import type { IServerAPI } from "../factories/types.js";
 import { BaseProposalContract } from "./base-proposal-contract.js";
 
-export interface IProposalChainLinkContract extends IProposalContract<ChainLinkProposal> {
+export interface IProposalChainLinkContract
+	extends IProposalContract<ChainLinkProposal> {
 	getCollateralAmount(proposal: ChainLinkProposal): Promise<bigint>;
-  }
+}
 
-export class ChainLinkProposalContract extends BaseProposalContract<ChainLinkProposal> implements IProposalChainLinkContract {
-	async createMultiProposal(proposals: ProposalWithHash[]): Promise<ProposalWithSignature[]> {
+export class ChainLinkProposalContract
+	extends BaseProposalContract<ChainLinkProposal>
+	implements IProposalChainLinkContract
+{
+	async createMultiProposal(
+		proposals: ProposalWithHash[],
+	): Promise<ProposalWithSignature[]> {
 		const structToSign = this.getMerkleTreeForSigning(proposals);
 
-		const signature = await signTypedData(this.config, structToSign);
+		const signature = await this.signWithSafeWalletSupport(
+			{
+				name: "PWNMultiproposal",
+				chainId: proposals[0].chainId,
+				verifyingContract: getChainLinkProposalContractAddress(
+					proposals[0].chainId,
+				),
+			},
+			structToSign.types,
+			structToSign.primaryType,
+			structToSign.message,
+		);
 
 		const merkleRoot = structToSign.message.multiproposalMerkleRoot;
 
-		return proposals.map((proposal) => ({
-			...proposal,
-			signature,
-			hash: proposal.hash,
-			isOnChain: false,
-			multiproposalMerkleRoot: merkleRoot,
-		}) as ProposalWithSignature);
+		return proposals.map(
+			(proposal) =>
+				({
+					...proposal,
+					signature,
+					hash: proposal.hash,
+					isOnChain: false,
+					multiproposalMerkleRoot: merkleRoot,
+				}) as ProposalWithSignature,
+		);
 	}
 
 	async getProposalHash(proposal: ChainLinkProposal): Promise<Hex> {
@@ -49,22 +69,24 @@ export class ChainLinkProposalContract extends BaseProposalContract<ChainLinkPro
 		return data as Hex;
 	}
 
-	async signProposal(proposal: ChainLinkProposal): Promise<ProposalWithSignature> {
-		const hash = await this.getProposalHash(proposal)
+	async signProposal(
+		proposal: ChainLinkProposal,
+	): Promise<ProposalWithSignature> {
+		const hash = await this.getProposalHash(proposal);
 
 		const domain = {
-			name: 'PWNSimpleLoanElasticChainlinkProposal',
-			version: '1.0',
+			name: "PWNSimpleLoanElasticChainlinkProposal",
+			version: "1.0",
 			chainId: proposal.chainId,
 			verifyingContract: getChainLinkProposalContractAddress(proposal.chainId),
-		  }
+		};
 
-		const signature = await signTypedData(this.config, {
-      		domain,
-			types: ChainLinkProposal.ERC712_TYPES,
-      		primaryType: 'Proposal',
-      		message: proposal.createProposalStruct(),
-		})
+		const signature = await this.signWithSafeWalletSupport(
+			domain,
+			ChainLinkProposal.ERC712_TYPES,
+			"Proposal",
+			proposal.createProposalStruct(),
+		);
 
 		return Object.assign(proposal, {
 			signature,
@@ -75,48 +97,60 @@ export class ChainLinkProposalContract extends BaseProposalContract<ChainLinkPro
 
 	async createProposal(
 		proposal: ChainLinkProposal,
-		deps: {
-			persistProposal: IServerAPI["post"]["persistProposal"];
-		}
+		deps: { persistProposal: IServerAPI["post"]["persistProposal"] },
 	): Promise<ProposalWithSignature> {
 		const signedProposal = await this.signProposal(proposal);
 		await deps.persistProposal(signedProposal);
-		return signedProposal
+		return signedProposal;
 	}
 
-	async createOnChainProposal(proposal: ChainLinkProposal): Promise<ProposalWithSignature> {
-		const proposalHash = await writePwnSimpleLoanElasticChainlinkProposalMakeProposal(
-			this.config,
-			{
-				address: getChainLinkProposalContractAddress(proposal.chainId),
-				chainId: proposal.chainId,
-				args: [proposal.createProposalStruct()],
-			},
-		);
+	async createOnChainProposal(
+		proposal: ChainLinkProposal,
+	): Promise<ProposalWithSignature> {
+		const account = getAccount(this.config);
+		const isSafe = account?.address
+			? await this.safeService.isSafeAddress(account.address as Address)
+			: false;
+
+		const proposalHash =
+			await writePwnSimpleLoanElasticChainlinkProposalMakeProposal(
+				this.config,
+				{
+					address: getChainLinkProposalContractAddress(proposal.chainId),
+					chainId: proposal.chainId,
+					args: [proposal.createProposalStruct()],
+				},
+			);
+
+		// If using a Safe wallet, wait for transaction confirmation
+		if (isSafe) {
+			await this.safeService.waitForTransaction(proposalHash);
+		}
 
 		return Object.assign(proposal, {
-			signature: null,  // on-chain proposals does not have signature
+			signature: null, // on-chain proposals does not have signature
 			hash: proposalHash,
 			isOnChain: true,
 		}) as ProposalWithSignature;
 	}
 
 	async getCollateralAmount(proposal: ChainLinkProposal): Promise<bigint> {
-		const data = await readPwnSimpleLoanElasticChainlinkProposalGetCollateralAmount(
-			this.config,
-			{
-				address: getChainLinkProposalContractAddress(proposal.chainId),
-				chainId: proposal.chainId,
-				args: [
-					proposal.creditAddress,
-					proposal.availableCreditLimit,
-					proposal.collateralAddress,
-					proposal.feedIntermediaryDenominations,
-					proposal.feedInvertFlags,
-					proposal.loanToValue
-				],
-			},
-		);
+		const data =
+			await readPwnSimpleLoanElasticChainlinkProposalGetCollateralAmount(
+				this.config,
+				{
+					address: getChainLinkProposalContractAddress(proposal.chainId),
+					chainId: proposal.chainId,
+					args: [
+						proposal.creditAddress,
+						proposal.availableCreditLimit,
+						proposal.collateralAddress,
+						proposal.feedIntermediaryDenominations,
+						proposal.feedInvertFlags,
+						proposal.loanToValue,
+					],
+				},
+			);
 		return data;
 	}
 }

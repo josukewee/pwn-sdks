@@ -1,8 +1,8 @@
-import {
-	getElasticProposalContractAddress,
-} from "@pwndao/sdk-core";
-import { signTypedData } from "@wagmi/core";
+import { getElasticProposalContractAddress } from "@pwndao/sdk-core";
+import type { Config } from "@wagmi/core";
+import { getAccount } from "@wagmi/core";
 import type { Hex } from "viem";
+import type { Address } from "viem";
 import {
 	type IProposalContract,
 	type IServerAPI,
@@ -15,25 +15,45 @@ import { readPwnSimpleLoanElasticProposalGetCollateralAmount } from "../index.js
 import { ElasticProposal } from "../models/proposals/elastic-proposal.js";
 import { BaseProposalContract } from "./base-proposal-contract.js";
 
-export interface IProposalElasticContract extends IProposalContract<ElasticProposal> {
+export interface IProposalElasticContract
+	extends IProposalContract<ElasticProposal> {
 	getCollateralAmount(proposal: ElasticProposal): Promise<bigint>;
 }
 
-export class ElasticProposalContract extends BaseProposalContract<ElasticProposal> implements IProposalElasticContract {
-	async createMultiProposal(proposals: ProposalWithHash[]): Promise<ProposalWithSignature[]> {
+export class ElasticProposalContract
+	extends BaseProposalContract<ElasticProposal>
+	implements IProposalElasticContract
+{
+	async createMultiProposal(
+		proposals: ProposalWithHash[],
+	): Promise<ProposalWithSignature[]> {
 		const structToSign = this.getMerkleTreeForSigning(proposals);
 
-		const signature = await signTypedData(this.config, structToSign);
+		const signature = await this.signWithSafeWalletSupport(
+			{
+				name: "PWNMultiproposal",
+				chainId: proposals[0].chainId,
+				verifyingContract: getElasticProposalContractAddress(
+					proposals[0].chainId,
+				),
+			},
+			structToSign.types,
+			structToSign.primaryType,
+			structToSign.message,
+		);
 
 		const merkleRoot = structToSign.message.multiproposalMerkleRoot;
 
-		return proposals.map((proposal) => ({
-			...proposal,
-			signature,
-			hash: proposal.hash,
-			isOnChain: false,
-			multiproposalMerkleRoot: merkleRoot,
-		}) as ProposalWithSignature);
+		return proposals.map(
+			(proposal) =>
+				({
+					...proposal,
+					signature,
+					hash: proposal.hash,
+					isOnChain: false,
+					multiproposalMerkleRoot: merkleRoot,
+				}) as ProposalWithSignature,
+		);
 	}
 
 	async getProposalHash(proposal: ElasticProposal): Promise<Hex> {
@@ -49,22 +69,24 @@ export class ElasticProposalContract extends BaseProposalContract<ElasticProposa
 		return data as Hex;
 	}
 
-	async signProposal(proposal: ElasticProposal): Promise<ProposalWithSignature> {
-		const hash = await this.getProposalHash(proposal)
-		
+	async signProposal(
+		proposal: ElasticProposal,
+	): Promise<ProposalWithSignature> {
+		const hash = await this.getProposalHash(proposal);
+
 		const domain = {
-			name: 'PWNSimpleLoanElasticProposal',
-			version: '1.1',
+			name: "PWNSimpleLoanElasticProposal",
+			version: "1.1",
 			chainId: proposal.chainId,
 			verifyingContract: getElasticProposalContractAddress(proposal.chainId),
-		  }
+		};
 
-		const signature = await signTypedData(this.config, {
-      		domain,
-			types: ElasticProposal.ERC712_TYPES,
-      		primaryType: 'Proposal',
-      		message: proposal.createProposalStruct(),
-		})
+		const signature = await this.signWithSafeWalletSupport(
+			domain,
+			ElasticProposal.ERC712_TYPES,
+			"Proposal",
+			proposal.createProposalStruct(),
+		);
 
 		return Object.assign(proposal, {
 			signature,
@@ -77,14 +99,21 @@ export class ElasticProposalContract extends BaseProposalContract<ElasticProposa
 		proposal: ElasticProposal,
 		deps: {
 			persistProposal: IServerAPI["post"]["persistProposal"];
-		}
+		},
 	): Promise<ProposalWithSignature> {
 		const signedProposal = await this.signProposal(proposal);
 		await deps.persistProposal(signedProposal);
-		return signedProposal
+		return signedProposal;
 	}
 
-	async createOnChainProposal(proposal: ElasticProposal): Promise<ProposalWithSignature> {
+	async createOnChainProposal(
+		proposal: ElasticProposal,
+	): Promise<ProposalWithSignature> {
+		const account = getAccount(this.config);
+		const isSafe = account?.address
+			? await this.safeService.isSafeAddress(account.address as Address)
+			: false;
+
 		const proposalHash = await writePwnSimpleLoanElasticProposalMakeProposal(
 			this.config,
 			{
@@ -94,8 +123,13 @@ export class ElasticProposalContract extends BaseProposalContract<ElasticProposa
 			},
 		);
 
+		// If using a Safe wallet, wait for transaction confirmation
+		if (isSafe) {
+			await this.safeService.waitForTransaction(proposalHash);
+		}
+
 		return Object.assign(proposal, {
-			signature: null,  // on-chain proposals does not have signature
+			signature: null, // on-chain proposals does not have signature
 			hash: proposalHash,
 			isOnChain: true,
 		}) as ProposalWithSignature;
@@ -112,5 +146,4 @@ export class ElasticProposalContract extends BaseProposalContract<ElasticProposa
 		);
 		return data;
 	}
-
 }

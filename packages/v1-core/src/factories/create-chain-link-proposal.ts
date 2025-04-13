@@ -15,7 +15,7 @@ import type {
   UserWithNonceManager,
 } from '@pwndao/sdk-core';
 import { ChainLinkProposal } from '../models/proposals/chainlink-proposal.js';
-import { getLoanContractAddress, getUniqueCreditCollateralKey, isPoolToken, PoolToken } from '@pwndao/sdk-core';
+import { getLoanContractAddress, getUniqueCreditCollateralKey, isPoolToken } from '@pwndao/sdk-core';
 import { ChainLinkProposalContract, type IProposalChainLinkContract } from '../contracts/chain-link-proposal-contract.js';
 import { type ChainsWithChainLinkFeedSupport, getFeedData } from '../utils/chainlink-feeds.js';
 import invariant from 'ts-invariant';
