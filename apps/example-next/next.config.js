@@ -48,22 +48,22 @@ const nextConfig = {
       // Handle URLs without trailing slash
       {
         source: '/api/v1/:path*',
-        destination: 'http://dev-3.pwn.xyz/api/v1/:path*',
+        destination: 'http://api-staging.pwn.xyz/api/v1/:path*',
       },
       // Handle URLs that already have a trailing slash
       {
         source: '/api/v1/:path*/',
-        destination: 'https://dev-3.pwn.xyz/api/v1/:path*/',
+        destination: 'https://api-staging.pwn.xyz/api/v1/:path*/',
       },
       // Handle URLs that already have a trailing slash
       {
         source: '/api/v2/:path*/',
-        destination: 'https://dev-3.pwn.xyz/api/v2/:path*/',
+        destination: 'https://api-staging.pwn.xyz/api/v2/:path*/',
       },
       // Handle URLs without trailing slash
       {
         source: '/api/v2/:path*',
-        destination: 'https://dev-3.pwn.xyz/api/v2/:path*',
+        destination: 'https://api-staging.pwn.xyz/api/v2/:path*',
       },
     ];
   },
