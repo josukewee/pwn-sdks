@@ -22,16 +22,18 @@ const metadata = {
 }
 
 // Create the modal
-// const modal = createAppKit({
-//   adapters: [wagmiAdapter],
-//   projectId,
-//   networks: [mainnet, arbitrum, base, polygon, sepolia],
-//   defaultNetwork: mainnet,
-//   metadata: metadata,
-//   features: {
-//     analytics: true // Optional - defaults to your Cloud configuration
-//   }
-// })
+const modal = createAppKit({
+  adapters: [wagmiAdapter],
+  projectId,
+  networks: [mainnet, arbitrum, base, polygon, sepolia],
+  defaultNetwork: mainnet,
+  metadata: metadata,
+  features: {
+    analytics: true // Optional - defaults to your Cloud configuration
+  }
+})
+
+console.log(modal)
 
 function ContextProvider({ children, cookies }: { children: ReactNode; cookies: string | null }) {
   const initialState = cookieToInitialState(wagmiAdapter.wagmiConfig as Config, cookies)
