@@ -26,7 +26,7 @@ export interface StrategyTerm {
 	 * The minimum credit amount percentage for a proposal to be created
 	 * With 1e4 precision
 	 */
-	minCreditAmountPercentage: number;
+	minCreditAmountPercentage?: number;
 	id?: string; // if provided it's strategy id
 	relatedStrategyId?: string;
 }
@@ -40,6 +40,7 @@ export interface IProposalStrategy<
 		utilizedCreditId: Hex,
 		isOffer: boolean,
 		sourceOfFunds: AddressString | null,
+		minCreditAmount?: bigint,
 	): CreateElasticProposalParams[];
 
 	createLendingProposals(
@@ -48,6 +49,7 @@ export interface IProposalStrategy<
 		utilizedCreditId: Hex,
 		isOffer: boolean,
 		sourceOfFunds: AddressString | null,
+		minCreditAmount: bigint,
 	): Promise<T[]>;
 }
 
