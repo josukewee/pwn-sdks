@@ -1,14 +1,14 @@
 import type { SupportedChain, UserWithNonceManager } from "@pwndao/sdk-core";
+import type { Config } from "@wagmi/core";
 import type { ProposalWithHash } from "src/models/strategies/types.js";
 import invariant from "ts-invariant";
+import { createChainLinkElasticProposal } from "../factories/create-chain-link-proposal.js";
+import type { ChainLinkElasticProposalDeps } from "../factories/create-chain-link-proposal.js";
 import {
 	type ElasticProposalDeps,
 	createElasticProposal,
 } from "../factories/create-elastic-proposal.js";
 import { ProposalType } from "../models/proposals/proposal-base.js";
-import { createChainLinkElasticProposal } from "../factories/create-chain-link-proposal.js";
-import type { ChainLinkElasticProposalDeps } from "../factories/create-chain-link-proposal.js";
-import type { Config } from "@wagmi/core";
 import type { ImplementedProposalTypes, ProposalParamWithDeps } from "./types.js";
 
 export const makeProposals = async <T extends ImplementedProposalTypes>(

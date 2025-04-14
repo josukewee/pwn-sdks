@@ -96,7 +96,6 @@ export class ElasticProposalStrategy
 			collateralUsdPrice,
 		});
 
-		// Calculate min credit amount using the shared utility
 		const minCreditAmount = calculateMinCreditAmount(
 			params.creditAmount,
 			params.minCreditAmountPercentage,
@@ -151,6 +150,7 @@ export class ElasticProposalStrategy
 	 * @param creditAmount - The credit amount for the proposal
 	 * @param utilizedCreditId - if provided, all credits with share the same utilized credit ID
 	 * @param isOffer - if true, the proposal is an offer
+	 * @param minCreditAmount - The minimum credit amount for the proposal
 	 * @returns The proposals parameters
 	 */
 	getProposalsParams(
@@ -160,6 +160,7 @@ export class ElasticProposalStrategy
 		sourceOfFunds: AddressString | null,
 	): CreateElasticProposalParams[] {
 		const result: CreateElasticProposalParams[] = [];
+		invariant(this.term.minCreditAmountPercentage, "Min credit amount percentage is required for this proposal type");
 		for (const credit of this.term.creditAssets) {
 			for (const collateral of this.term.collateralAssets) {
 				result.push({
@@ -296,6 +297,8 @@ export const createElasticProposals = (
 	isOffer = true,
 ): ProposalParamWithDeps<ImplementedProposalTypes>[] => {
 	const proposals: ProposalParamWithDeps<ImplementedProposalTypes>[] = [];
+
+	invariant(strategy.terms.minCreditAmountPercentage, "Min credit amount is required for this proposal type");
 
 	const apiDeps = {
 		persistProposal: API.post.persistProposal,
