@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { SupportedChain } from "@pwndao/sdk-core"
-import { getFeedData, isExistBasePair, FEED_REGISTRY } from './chainlink-feeds.js'
+import { getFeedData, isExistBasePair, FEED_REGISTRY , CHAINS_WITH_CHAINLINK_FEED_SUPPORT} from './chainlink-feeds.js'
 import { DAI, USDC, WETH, WBTC, stETH } from "../addresses.js"
 
 describe('Chainlink Feeds Utils', () => {
 
   const chains = {
     ethereum: SupportedChain.Ethereum as const,
-    sepolia: SupportedChain.Sepolia as const
+    sepolia: SupportedChain.Sepolia as const,
   };
   
   const tokens = {
@@ -24,12 +24,16 @@ describe('Chainlink Feeds Utils', () => {
       wbtc: WBTC[chains.sepolia]
     }
   };
-  
   const unsupportedAddress = '0x1234567890123456789012345678901234567890';
 
   describe('isExistBasePair', () => {
-    it('should return correct result for existing inverted pair', () => {
-      const result = isExistBasePair(chains.ethereum, 'USD', 'ETH')
+
+    it("should return correct result for existing inverted pair", () => {
+       const result = isExistBasePair(SupportedChain.Sepolia, 'USD', 'BTC')
+       expect(result).toEqual({found: true, isInverted: true})
+    })
+    it('should it return inverted and found: true?,ffff', () => {
+      const result = isExistBasePair(chains.ethereum, 'USD', 'USD')
       expect(result).toEqual({ found: true, isInverted: true })
     })
 
