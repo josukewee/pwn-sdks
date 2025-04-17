@@ -132,15 +132,8 @@ const CRONOS_CONTRACTS: V1_3_Contracts = {
 
 const UNICHAIN_CONSTANTS: V1_3_Contracts = {
 	...PWN_V1_3_CONTRACTS,
-	utilizedCredit: "0x585C2D4d5D84b296921BF96598961Eec6Ae5C09C",
-	pwnSimpleLoan: "0x322e86E6c813d77a904C5B4aa808a13E0AD4412f",
-	pwnSimpleLoanSimpleProposal: "0xCAec7F837930dC9fB36B0E584FEf498714B2a951",
-	pwnSimpleLoanListProposal: "0x2ECd36747A4a18Dc578798A79c87035D610EDE9F",
-	pwnSimpleLoanElasticProposal: "0x2Bf2dC42eF08FA2C5BD15f6aDca402bf2Be75A1A",
-	pwnSimpleLoanElasticChainlinkProposal: ZERO_ADDRESS, // not deployed
-	pwnSimpleLoanDutchAuctionProposal:
-		"0x469B2C01FBb8D2073562F4Fe28aaA67D59c05Dc2",
 	tokenBundlerContract: "0x354869495Fd916ADAFc0626C3d60115240dc06f1",
+	pwnSimpleLoanElasticChainlinkProposal: ZERO_ADDRESS, // not deployed
 };
 
 // Sepolia contracts
