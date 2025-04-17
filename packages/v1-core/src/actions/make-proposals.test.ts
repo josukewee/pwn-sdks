@@ -658,7 +658,6 @@ describe("Test make proposals", () => {
 	it("should fallback to makeProposal for single proposal", async () => {
 		const contractMock = {
 			createProposal: vi.fn().mockImplementation((p) => {
-				console.log(p, "<<<<<<<<<<<<");
 				return {
 					...p,
 					signature: "0x456",
@@ -722,42 +721,9 @@ describe("Test make proposals", () => {
 			},
 		];
 
-		const mockProposal: ProposalWithSignature = {
-			proposerSpecHash,
-			collateralAddress,
-			creditAddress,
-			availableCreditLimit: creditAmount,
-			minCreditAmount: 3n * 10n ** (18n - 2n),
-			accruingInterestAPR: apr,
-			signature: "0x456",
-			nonce: 0n,
-			isOffer: true,
-			sourceOfFunds: undefined,
-			expirationTimestamp: BigInt(
-				Math.floor(date.getTime() / 1000) + expirationDays * 24 * 60 * 60,
-			),
-			durationTimestamp: BigInt(durationDays * 24 * 60 * 60),
-			hash: "0x123",
-			utilizedCreditId: elasticParams.utilizedCreditId,
-			relatedStrategyId: "1",
-			category: 0,
-			collateralTokenId: ZERO_FINGERPRINT,
-			creditTokenId: ZERO_FINGERPRINT,
-			loanContractAddress: getLoanContractAddress(SupportedChain.Ethereum),
-		};
-
 		const result = await makeProposals(config, proposalParams, user);
 
-		// Since we know this is a single proposal case, we can assert the type
 		const proposal = result[0] as ProposalWithSignature;
-
-		// // Verify makeProposal was called with correct parameters
-		// expect(makeProposal).toHaveBeenCalledWith(
-		// 	user,
-		// 	proposalParams[0].type,
-		// 	proposalParams[0].params,
-		// 	proposalParams[0].deps,
-		// );
 
 
 		expect(proposal).toBeDefined()

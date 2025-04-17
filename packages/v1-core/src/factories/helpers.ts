@@ -78,8 +78,6 @@ export const getLendingCommonProposalFields = async (
 		sourceOfFunds,
 	} = params;
 
-	console.log('sourceOfFunds', sourceOfFunds);
-
 	const proposerSpecHash = await deps.loanContract.getLenderSpecHash(
 		{
 			sourceOfFunds: isPoolToken(credit) ? credit.address : user.address,

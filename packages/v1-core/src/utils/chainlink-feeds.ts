@@ -300,7 +300,6 @@ export const getFeedData = <T extends ChainsWithChainLinkFeedSupport>(
 	feedIntermediaryDenominations: AddressString[];
 	feedInvertFlags: boolean[];
 } | null => {
-	console.log("getFeedData", chainId, base, quote);
 	if (base === quote) {
 		return null;
 	}
