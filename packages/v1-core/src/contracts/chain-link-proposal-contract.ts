@@ -29,13 +29,7 @@ export class ChainLinkProposalContract
 		const structToSign = this.getMerkleTreeForSigning(proposals);
 
 		const signature = await this.signWithSafeWalletSupport(
-			{
-				name: "PWNMultiproposal",
-				chainId: proposals[0].chainId,
-				verifyingContract: getChainLinkProposalContractAddress(
-					proposals[0].chainId,
-				),
-			},
+			structToSign.domain,
 			structToSign.types,
 			structToSign.primaryType,
 			structToSign.message,

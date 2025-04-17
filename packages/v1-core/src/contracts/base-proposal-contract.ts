@@ -70,8 +70,8 @@ export abstract class BaseProposalContract<TProposal extends Proposal>
 		domain: {
 			name: string;
 			version?: string;
-			chainId: number;
-			verifyingContract: Address;
+			chainId?: number;
+			verifyingContract?: Address;
 		},
 		types: Record<string, Array<{ name: string; type: string }>>,
 		primaryType: string,
