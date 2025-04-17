@@ -20,7 +20,6 @@ export class ChainLinkProposal implements IOracleProposalBase {
 			{ name: "checkCollateralStateFingerprint", type: "bool" },
 			{ name: "collateralStateFingerprint", type: "bytes32" },
 			{ name: "creditAddress", type: "address" },
-			{ name: "creditPerCollateralUnit", type: "uint256" },
 			{ name: "minCreditAmount", type: "uint256" },
 			{ name: "availableCreditLimit", type: "uint256" },
 			{ name: "utilizedCreditId", type: "bytes32" },
