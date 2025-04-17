@@ -155,8 +155,6 @@ export class ChainLinkProposalStrategy
 		const result: CreateChainLinkElasticProposalParams[] = [];
 
 		for (const credit of this.term.creditAssets) {
-			console.log(minCreditAmount, this.term.minCreditAmountPercentage);
-
 			if (
 				(!minCreditAmount && !this.term.minCreditAmountPercentage) ||
 				(minCreditAmount && this.term.minCreditAmountPercentage)

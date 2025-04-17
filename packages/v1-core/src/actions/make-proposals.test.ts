@@ -1,7 +1,7 @@
 import {
 	type AddressString,
-	MultiTokenCategory,
 	SupportedChain,
+	type UserWithNonceManager,
 	ZERO_ADDRESS,
 	ZERO_FINGERPRINT,
 	getLoanContractAddress,
@@ -14,10 +14,12 @@ import {
 } from "@pwndao/sdk-core";
 import type { Config } from "@wagmi/core";
 import { LBTC, PYUSD } from "../addresses.js";
+import type { CreateElasticProposalParams } from "../factories/create-elastic-proposal.js";
 import type { ProposalWithSignature } from "../index.js";
 import { ChainLinkProposal } from "../models/proposals/chainlink-proposal.js";
 import { ProposalType } from "../models/proposals/proposal-base.js";
 import { convertNameIntoDenominator } from "../utils/chainlink-feeds.js";
+import { makeProposal } from "./make-proposal.js";
 import { makeProposals } from "./make-proposals.js";
 import type {
 	ImplementedProposalTypes,
@@ -26,6 +28,7 @@ import type {
 
 describe("Test make proposals", () => {
 	const collateralAddress = LBTC[SupportedChain.Ethereum] as AddressString;
+	const collateralAddress2 = PYUSD[SupportedChain.Ethereum] as AddressString;
 	const creditAddress = PYUSD[SupportedChain.Ethereum] as AddressString;
 
 	const user_address = generateAddress();
@@ -39,6 +42,7 @@ describe("Test make proposals", () => {
 
 	afterEach(() => {
 		vi.useRealTimers();
+		vi.resetAllMocks();
 	});
 
 	const durationDays = 30;
@@ -397,16 +401,56 @@ describe("Test make proposals", () => {
 					loanContract: loanContractMock,
 				},
 			},
+			{
+				type: ProposalType.ChainLink,
+				params: {
+					collateral: getMockToken(SupportedChain.Ethereum, collateralAddress2),
+					credit: creditToken,
+					creditAmount,
+					ltv: {
+						[getUniqueCreditCollateralKey(
+							creditToken,
+							getMockToken(SupportedChain.Ethereum, collateralAddress2),
+						)]: Number(ltv),
+					},
+					apr: {
+						[getUniqueCreditCollateralKey(
+							creditToken,
+							getMockToken(SupportedChain.Ethereum, collateralAddress2),
+						)]: apr,
+					},
+					duration: {
+						days: durationDays,
+						date: undefined,
+					},
+					expirationDays,
+					utilizedCreditId: generateAddress(),
+					minCreditAmountPercentage: 0,
+					minCreditAmount: specificMinCreditAmount, // Use the specific minCreditAmount
+					relatedStrategyId: "1",
+					sourceOfFunds: null,
+					isOffer: true,
+				},
+				deps: {
+					api: {
+						persistProposal: vi.fn().mockImplementation((p) => p),
+						persistProposals: vi.fn().mockImplementation((p) => p),
+						updateNonces: vi.fn().mockImplementation((p) => p),
+					},
+					contract: contractMock,
+					loanContract: loanContractMock,
+				},
+			},
 		];
 
 		const proposals = await makeProposals(config, proposalParams, user);
 
-		expect(proposals).toHaveLength(1);
+		expect(proposals).toHaveLength(2);
 		expect(contractMock.createMultiProposal).toHaveBeenCalled();
 		expect(loanContractMock.getLenderSpecHash).toHaveBeenCalledTimes(1);
 
 		// Verify that the proposal uses the specific minCreditAmount
-		const proposal = proposals[0];
+		const proposal = proposals?.[0];
 		expect(proposal.minCreditAmount).toBe(specificMinCreditAmount);
 		expect(proposal.proposerSpecHash).toBe(proposerSpecHash);
 		expect(proposal.collateralAddress).toBe(collateralAddress);
@@ -457,13 +501,17 @@ describe("Test make proposals", () => {
 		const proposalParams = [
 			{
 				type: "UnsupportedType" as ProposalType,
-				params: {},
+				params: {
+					proposalType: "UnsupportedType",
+					credit: getMockToken(SupportedChain.Ethereum, creditAddress),
+					collateral: getMockToken(SupportedChain.Ethereum, collateralAddress),
+				},
 				deps: {},
 			},
 		] as unknown as ProposalParamWithDeps<ImplementedProposalTypes>[];
 
 		await expect(makeProposals(config, proposalParams, user)).rejects.toThrow(
-			"Not implemented for proposal type UnsupportedType",
+			"Proposal type UnsupportedType not found",
 		);
 	});
 
@@ -480,6 +528,7 @@ describe("Test make proposals", () => {
 				}
 				return proposals;
 			}),
+			createProposal: vi.fn().mockImplementation((p) => p),
 		};
 
 		const loanContractMock = {
@@ -531,11 +580,50 @@ describe("Test make proposals", () => {
 					loanContract: loanContractMock,
 				},
 			},
+			{
+				type: ProposalType.ChainLink,
+				params: {
+					collateral: getMockToken(SupportedChain.Ethereum, collateralAddress2),
+					credit: getMockToken(SupportedChain.Ethereum, creditAddress),
+					creditAmount,
+					ltv: {
+						[getUniqueCreditCollateralKey(
+							getMockToken(SupportedChain.Ethereum, creditAddress),
+							getMockToken(SupportedChain.Ethereum, collateralAddress2),
+						)]: Number(ltv),
+					},
+					apr: {
+						[getUniqueCreditCollateralKey(
+							getMockToken(SupportedChain.Ethereum, creditAddress),
+							getMockToken(SupportedChain.Ethereum, collateralAddress2),
+						)]: apr,
+					},
+					duration: {
+						days: durationDays,
+						date: undefined,
+					},
+					expirationDays,
+					utilizedCreditId: generateAddress(),
+					minCreditAmountPercentage: 3,
+					relatedStrategyId: "1",
+					isOffer: false, // This is a request, not an offer
+					sourceOfFunds: null,
+				},
+				deps: {
+					api: {
+						persistProposal: vi.fn().mockImplementation((p) => p),
+						persistProposals: vi.fn().mockImplementation((p) => p),
+						updateNonces: vi.fn().mockImplementation((p) => p),
+					},
+					contract: contractMock,
+					loanContract: loanContractMock,
+				},
+			},
 		];
 
 		const proposals = await makeProposals(config, proposalParams, user);
 
-		expect(proposals).toHaveLength(1);
+		expect(proposals).toHaveLength(2);
 		expect(contractMock.createMultiProposal).toHaveBeenCalled();
 		expect(loanContractMock.getLenderSpecHash).toHaveBeenCalledTimes(1);
 
@@ -565,5 +653,87 @@ describe("Test make proposals", () => {
 		expect(proposal.feedInvertFlags[0]).toBe(false);
 		expect(proposal.feedInvertFlags[1]).toBe(true);
 		expect(proposal.feedInvertFlags[2]).toBe(true);
+	});
+
+	it("should fallback to makeProposal for single proposal", async () => {
+		const contractMock = {
+			createProposal: vi.fn().mockImplementation((p) => {
+				return {
+					...p,
+					signature: "0x456",
+				};
+			}),
+			getCollateralAmount: vi.fn().mockImplementation(() => 0n),
+			getProposalHash: vi.fn().mockImplementation(() => "0x123"),
+		};
+
+		const loanContractMock = {
+			getLenderSpecHash: vi
+				.fn()
+				.mockImplementation(() => Promise.resolve(proposerSpecHash)),
+		};
+
+		const user = getMockUserWithNonceManager(user_address);
+		const config = {} as Config;
+
+		const elasticParams: CreateElasticProposalParams = {
+			collateral: getMockToken(SupportedChain.Ethereum, collateralAddress),
+			credit: getMockToken(SupportedChain.Ethereum, creditAddress),
+			creditAmount,
+			ltv: {
+				[getUniqueCreditCollateralKey(
+					getMockToken(SupportedChain.Ethereum, creditAddress),
+					getMockToken(SupportedChain.Ethereum, collateralAddress),
+				)]: Number(ltv),
+			},
+			apr: {
+				[getUniqueCreditCollateralKey(
+					getMockToken(SupportedChain.Ethereum, creditAddress),
+					getMockToken(SupportedChain.Ethereum, collateralAddress),
+				)]: apr,
+			},
+			duration: {
+				days: durationDays,
+				date: undefined,
+			},
+			expirationDays,
+			utilizedCreditId: generateAddress(),
+			minCreditAmountPercentage: 3,
+			relatedStrategyId: "1",
+			isOffer: true,
+			sourceOfFunds: null,
+		};
+
+		const proposalParams: ProposalParamWithDeps<ProposalType.Elastic>[] = [
+			{
+				type: ProposalType.Elastic,
+				params: elasticParams,
+				deps: {
+					api: {
+						getAssetUsdUnitPrice: async () => 1000000000000000000n,
+						persistProposal: vi.fn().mockImplementation((p) => p),
+						persistProposals: vi.fn().mockImplementation((p) => p),
+						updateNonces: vi.fn().mockImplementation((p) => p),
+					},
+					contract: contractMock,
+					loanContract: loanContractMock,
+				},
+			},
+		];
+
+		const result = await makeProposals(config, proposalParams, user);
+
+		const proposal = result[0] as ProposalWithSignature;
+
+
+		expect(proposal).toBeDefined()
+		expect(proposal.proposerSpecHash).toBe(proposerSpecHash)
+		expect(proposal.collateralAddress).toBe(collateralAddress)
+		expect(proposal.creditAddress).toBe(creditAddress)
+		expect(proposal.availableCreditLimit).toBe(creditAmount)
+		expect(proposal.minCreditAmount).toBe(3n * 10n ** (18n - 2n))
+		expect(proposal.accruingInterestAPR).toBe(apr)
+		expect(proposal.signature).toBe("0x456")
+
 	});
 });
